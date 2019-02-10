@@ -10,20 +10,23 @@
 #define SD_CS    2
 
 #define MLX90640_ADR 0x33
-
+#define TA_SHIFT 8 //the default shift for a MLX90640 device in open air
 //Adafruit_ILI9341 tft = Adafruit_ILI9341(TFT_CS, TFT_DC);
 
 void setup()
 {
   int result = -55;
   uint16_t data;
+  uint8_t address;
   
   Serial.begin(115200);
   Wire.begin();
 
   delay(10);
   Serial.println("\nInfraEye boot...");
-  I2C_scan();
+  address = I2C_scan();
+  if(address != 0xFF)
+  {
 /*
   result = MLX90640_I2CRead(0x33, 0x8000, 1, &data);
   Serial.printf("Data: 0x%.4x Results: %d\n", data, result);
@@ -44,7 +47,7 @@ void setup()
   Serial.println(result);
 
   Serial.println("Set MLX90640 resolution:");
-  result = MLX90640_SetResolution(0x33, 2);
+  result = MLX90640_SetResolution(0x33, 0);
   if(result==0)   Serial.println("Set MLX90640 resolution: OK");
   if(result==-1) Serial.println("Set MLX90640 resolution: Communication error");
   if(result==-2) Serial.println("Set MLX90640 resolution: Data not written!");
@@ -53,6 +56,36 @@ void setup()
   Serial.println("Get MLX90640 resolution:");
   result = MLX90640_GetCurResolution(0x33);  
   Serial.println(result);
+
+char str_temp[6];
+
+float emissivity = 0.95;
+float tr;
+static uint16_t eeMLX90640[832];
+static uint16_t mlx90640Frame[834];
+paramsMLX90640 mlx90640;
+static float mlx90640To[768];
+int status;
+status = MLX90640_DumpEE (MLX90640_ADR, eeMLX90640);
+status = MLX90640_ExtractParameters(eeMLX90640, &mlx90640);
+status = MLX90640_GetFrameData (MLX90640_ADR, mlx90640Frame);
+tr = MLX90640_GetTa(mlx90640Frame, &mlx90640) - TA_SHIFT; //reflected temperature based on the sensor
+dtostrf((double)tr, 4, 2, str_temp);
+Serial.printf("Ambient temperature: %s°C", str_temp);
+Serial.printf("Ambient temperature: %d°C", (int)tr);
+//ambient temperature
+MLX90640_CalculateTo(mlx90640Frame, &mlx90640, emissivity, tr, mlx90640To);
+
+
+for(uint16_t i=0;i<768;i++)
+{
+  if((i%32)==0) Serial.printf("\n");
+  /* 4 is mininum width, 2 is precision; float value is copied onto str_temp*/
+  dtostrf((double)mlx90640To[i], 4, 2, str_temp);
+  //sprintf(temperature,"%s F", str_temp);  
+  Serial.printf(" %s", str_temp);
+}
+  
 //  tft.begin();
 /*
   // read diagnostics (optional but can help debug problems)
@@ -67,12 +100,7 @@ void setup()
   x = tft.readcommand8(ILI9341_RDSELFDIAG);
   Serial.print("Self Diagnostic: 0x"); Serial.println(x, HEX); 
 */  
-  
-//  readSensor(128);
-delay(1000);
-//  readSensor(MLX90640_GetCurResolution(0x33));
-delay(1000);
-//  readSensor(0x55);
+  }
 }
 
 
@@ -111,8 +139,9 @@ unsigned long readSensor(int value) {
   return micros();// - start;
 }
 
-void I2C_scan(void)
+uint8_t I2C_scan(void)
 {
+  uint8_t detectedAddress = 0xFF;
     byte error, address;
   int nDevices;
  
@@ -132,6 +161,7 @@ void I2C_scan(void)
       Serial.print("I2C device found at address 0x");
       if (address<16)
         Serial.print("0");
+      detectedAddress = address;
       Serial.print(address,HEX);
       Serial.println("  !");
  
@@ -149,6 +179,7 @@ void I2C_scan(void)
     Serial.println("No I2C devices found\n");
   else
     Serial.println("done\n");
+    return(detectedAddress);
 }
 
 

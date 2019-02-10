@@ -17,9 +17,24 @@ int MLX90640_I2CRead(uint8_t slaveAddr, uint16_t startAddress, uint16_t nMemAddr
 	int i = 0;
 	uint8_t error = 0xFF;
 	uint8_t bytes;
+	uint8_t BufferSize;
     
 	Serial.println("---I2C Reading---");
-		
+Serial.printf("S nMemAdd: %d\n", nMemAddressRead);
+while(nMemAddressRead>0)
+{	
+	Serial.printf("P1 nMemAdd: %d BufferSize: %d\n", nMemAddressRead, BufferSize);
+	if(nMemAddressRead>=16)
+	{
+		nMemAddressRead = nMemAddressRead - 16;
+		BufferSize = 16;
+		wdt_reset();
+	}else
+	{
+		BufferSize = nMemAddressRead;
+		nMemAddressRead = 0;
+	}
+	Serial.printf("P2 nMemAdd: %d BufferSize: %d\n", nMemAddressRead, BufferSize);
     // Write register address
 	Wire.beginTransmission(slaveAddr);	// 7bit I2C address
 	Wire.write(startAddress >> 8);		// MSB of register address
@@ -28,7 +43,7 @@ int MLX90640_I2CRead(uint8_t slaveAddr, uint16_t startAddress, uint16_t nMemAddr
 	Serial.printf("I2C Write address 0x%.4x Error: %d\n", startAddress, error);	
 	
     // Read data
-	bytes = Wire.requestFrom((int)slaveAddr, (int)nMemAddressRead*2);
+	bytes = Wire.requestFrom((int)slaveAddr, (int)BufferSize*2);
 	Serial.printf("I2C Read data 0x");	
 	while (Wire.available())
 	{ // slave may send less than requested
@@ -47,7 +62,7 @@ int MLX90640_I2CRead(uint8_t slaveAddr, uint16_t startAddress, uint16_t nMemAddr
 		Serial.printf("%.2x", c);	
   	}
 	Serial.printf(" Bytes received: %d\n", bytes);	
-	
+}	
 	Serial.println("---I2C Reading End---");
 	return error;   
 } 

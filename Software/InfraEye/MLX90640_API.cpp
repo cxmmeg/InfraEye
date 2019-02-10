@@ -519,22 +519,33 @@ float MLX90640_GetTa(uint16_t *frameData, const paramsMLX90640 *params)
     float ptatArt;
     float vdd;
     float ta;
+    char vdd_str[6];
     
     vdd = MLX90640_GetVdd(frameData, params);
-    
+   
+    dtostrf((double)vdd, 4, 2, vdd_str);
+	Serial.printf("Vdd=%s\n", vdd_str); 
     ptat = frameData[800];
+	Serial.printf("ptat=%d\n", ptat); 
     if(ptat > 32767)
     {
         ptat = ptat - 65536;
     }
     
     ptatArt = frameData[768];
+    	Serial.printf("ptatArt=%d\n", ptatArt); 
     if(ptatArt > 32767)
     {
         ptatArt = ptatArt - 65536;
     }
+    	Serial.printf("ptat=%d\n", ptat); 
+	    dtostrf((double)params->alphaPTAT, 4, 2, vdd_str);
+	Serial.printf("alphaPTAT=%s\n", vdd_str); 
     ptatArt = (ptat / (ptat * params->alphaPTAT + ptatArt)) * pow(2, (double)18);
-    
+	    dtostrf((double)params->KvPTAT, 4, 2, vdd_str);
+	Serial.printf("KvPTAT=%s\n", vdd_str);     
+		    dtostrf((double)params->vPTAT25, 4, 2, vdd_str);
+	Serial.printf("vPTAT25=%s\n", vdd_str);     
     ta = (ptatArt / (1 + params->KvPTAT * (vdd - 3.3)) - params->vPTAT25);
     ta = ta / params->KtPTAT + 25;
     
