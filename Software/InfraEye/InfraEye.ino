@@ -71,18 +71,23 @@ status = MLX90640_ExtractParameters(eeMLX90640, &mlx90640);
 status = MLX90640_GetFrameData (MLX90640_ADR, mlx90640Frame);
 tr = MLX90640_GetTa(mlx90640Frame, &mlx90640) - TA_SHIFT; //reflected temperature based on the sensor
 dtostrf((double)tr, 4, 2, str_temp);
-Serial.printf("Ambient temperature: %s°C", str_temp);
-Serial.printf("Ambient temperature: %d°C", (int)tr);
+Serial.printf("Ambient temperature: %s°C (%d)\n", str_temp, (int)tr);
 //ambient temperature
 MLX90640_CalculateTo(mlx90640Frame, &mlx90640, emissivity, tr, mlx90640To);
 
+Serial.printf("Frame:\n");
+for(uint16_t i=0;i<834;i++)
+{
+  if((i%32)==0) Serial.printf("\n");  
+  Serial.printf(" %.4x", mlx90640Frame[i]);
+}
 
+Serial.printf("Temperatures:\n");
 for(uint16_t i=0;i<768;i++)
 {
   if((i%32)==0) Serial.printf("\n");
   /* 4 is mininum width, 2 is precision; float value is copied onto str_temp*/
-  dtostrf((double)mlx90640To[i], 4, 2, str_temp);
-  //sprintf(temperature,"%s F", str_temp);  
+  dtostrf((double)mlx90640To[i], 4, 2, str_temp);  
   Serial.printf(" %s", str_temp);
 }
   
