@@ -66,14 +66,14 @@ int MLX90640_GetFrameData(uint8_t slaveAddr, uint16_t *frameData)
         
     while(dataReady != 0 && cnt < 5)
     { 
-        error = MLX90640_I2CWrite(slaveAddr, 0x8000, 0x0030);
-        if(error == -1)
+        error = MLX90640_I2CRead(slaveAddr, 0x0400, 832, frameData); 
+        if(error != 0)
         {
             return error;
         }
-            
-        error = MLX90640_I2CRead(slaveAddr, 0x0400, 832, frameData); 
-        if(error != 0)
+        
+	error = MLX90640_I2CWrite(slaveAddr, 0x8000, 0x0030);
+        if(error == -1)
         {
             return error;
         }
@@ -524,28 +524,28 @@ float MLX90640_GetTa(uint16_t *frameData, const paramsMLX90640 *params)
     vdd = MLX90640_GetVdd(frameData, params);
    
     dtostrf((double)vdd, 4, 2, vdd_str);
-	Serial.printf("Vdd=%s\n", vdd_str); 
+//	Serial.printf("Vdd=%s\n", vdd_str); 
     ptat = frameData[800];
-	Serial.printf("ptat=%d\n", ptat); 
+//	Serial.printf("ptat=%d\n", ptat); 
     if(ptat > 32767)
     {
         ptat = ptat - 65536;
     }
     
     ptatArt = frameData[768];
-    	Serial.printf("ptatArt=%d\n", ptatArt); 
+//    	Serial.printf("ptatArt=%d\n", ptatArt); 
     if(ptatArt > 32767)
     {
         ptatArt = ptatArt - 65536;
     }
-    	Serial.printf("ptat=%d\n", ptat); 
+//    	Serial.printf("ptat=%d\n", ptat); 
 	    dtostrf((double)params->alphaPTAT, 4, 2, vdd_str);
-	Serial.printf("alphaPTAT=%s\n", vdd_str); 
+//	Serial.printf("alphaPTAT=%s\n", vdd_str); 
     ptatArt = (ptat / (ptat * params->alphaPTAT + ptatArt)) * pow(2, (double)18);
 	    dtostrf((double)params->KvPTAT, 4, 2, vdd_str);
-	Serial.printf("KvPTAT=%s\n", vdd_str);     
+//	Serial.printf("KvPTAT=%s\n", vdd_str);     
 		    dtostrf((double)params->vPTAT25, 4, 2, vdd_str);
-	Serial.printf("vPTAT25=%s\n", vdd_str);     
+//	Serial.printf("vPTAT25=%s\n", vdd_str);     
     ta = (ptatArt / (1 + params->KvPTAT * (vdd - 3.3)) - params->vPTAT25);
     ta = ta / params->KtPTAT + 25;
     
