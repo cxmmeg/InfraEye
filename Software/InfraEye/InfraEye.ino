@@ -84,10 +84,15 @@ for(uint16_t i=0;i<834;i++)
 Serial.printf("Temperatures:\n");
 for(uint16_t i=0;i<768;i++)
 {
+  uint16_t x, y;
+  x = i%32;
+  y = i/32;
   if((i%32)==0) Serial.printf("\n");
   /* 4 is mininum width, 2 is precision; float value is copied onto str_temp*/
   dtostrf((double)mlx90640To[i], 2, 0, str_temp);  
   Serial.printf("%s;", str_temp);
+  //Serial.printf("x%dy%d ", x, y);  
+  tft.drawPixel(x, y, (int)mlx90640To[i]);
 }
 Serial.printf("\n");
 // -------------- subpage1?
@@ -98,8 +103,10 @@ Serial.printf("Subpage %d\n", MLX90640_GetSubPageNumber(mlx90640Frame));
 wdt_reset();
 delay(500);
 wdt_reset();
-readSensor((int)mlx90640To[320]);
-tft.writePixel(120, 160, 1500);
+//readSensor((int)mlx90640To[320]);
+//tft.writePixel(120, 160, 1500);
+//tft.fillRect(0, 0, 240, 240, 32000);
+
 }
 
 unsigned long readSensor(int value) {
@@ -119,13 +126,7 @@ unsigned long readSensor(int value) {
   tft.setTextSize(2);
   tft.println("I implore thee,");
   tft.setTextSize(1);
-  tft.println("my foonting turlingdromes.");
-  tft.println("And hooptiously drangle me");
-  tft.println("with crinkly bindlewurdles,");
-  tft.println("Or I will rend thee");
-  tft.println("in the gobberwarts");
-  tft.println("with my blurglecruncheon,");
-  tft.println("see if I don't!");
+  tft.println("my foonting turlingdromes.");  
   return micros();// - start;
 }
 
