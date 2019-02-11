@@ -1343,3 +1343,4 @@ int IsPixelBad(uint16_t pixel,paramsMLX90640 *params)
     
     return 0;     
 }     
+

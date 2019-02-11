@@ -1,17 +1,17 @@
-//#include <Adafruit_GFX.h>
-//#include <Adafruit_ILI9341.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_ILI9341.h>
 #include "MLX90640_API.h"
 #include "MLX90640_I2C_driver.h"
 #include <Wire.h>
 
 #define STMPE_CS 16
 #define TFT_CS   0
-#define TFT_DC   9//4//15
-#define SD_CS    2
+#define TFT_DC   2//4//15
+#define SD_CS    0
 
 #define MLX90640_ADR 0x33
 #define TA_SHIFT 8 //the default shift for a MLX90640 device in open air
-//Adafruit_ILI9341 tft = Adafruit_ILI9341(TFT_CS, TFT_DC);
+Adafruit_ILI9341 tft = Adafruit_ILI9341(TFT_CS, TFT_DC);
 
 uint16_t eeMLX90640[832];
 paramsMLX90640 mlx90640;
@@ -24,44 +24,18 @@ void setup()
   int status; 
   
   Serial.begin(115200);
+  tft.begin();
   Wire.begin();
 
   delay(10);
   Serial.println("\nInfraEye boot...");
   address = I2C_scan();
-  
-/*
-  result = MLX90640_I2CRead(0x33, 0x8000, 1, &data);
-  Serial.printf("Data: 0x%.4x Results: %d\n", data, result);
-//  Serial.println(result);
-//  Serial.println(data[0], HEX);
-//  Serial.println(data[1], HEX);
-  result = MLX90640_I2CRead(0x33, 0x800D, 1, &data);
-  Serial.printf("Data: 0x%.4x Results: %d\n", data, result);
-//  Serial.println(result);
-//  Serial.println(data[0], HEX);
-//  Serial.println(data[1], HEX);
-  result = MLX90640_I2CRead(0x33, 0x800F, 1, &data);
-  Serial.printf("Data: 0x%.4x Results: %d\n", data, result);*/
 
   Serial.println("Get MLX90640 resolution:");
   result = MLX90640_GetCurResolution(0x33);
-  
   Serial.println(result);
+  
 
-//  Serial.println("Set MLX90640 resolution:");
-//  result = MLX90640_SetResolution(0x33, 0);
-//  if(result==0)   Serial.println("Set MLX90640 resolution: OK");
-//  if(result==-1) Serial.println("Set MLX90640 resolution: Communication error");
-//  if(result==-2) Serial.println("Set MLX90640 resolution: Data not written!");
-  //Serial.println(result);
-
-//  Serial.println("Get MLX90640 resolution:");
-//  result = MLX90640_GetCurResolution(0x33);  
-//  Serial.println(result);
- 
-//  tft.begin();
-/*
   // read diagnostics (optional but can help debug problems)
   uint8_t x = tft.readcommand8(ILI9341_RDMODE);
   Serial.print("Display Power Mode: 0x"); Serial.println(x, HEX);
@@ -73,7 +47,7 @@ void setup()
   Serial.print("Image Format: 0x"); Serial.println(x, HEX);
   x = tft.readcommand8(ILI9341_RDSELFDIAG);
   Serial.print("Self Diagnostic: 0x"); Serial.println(x, HEX); 
-*/  
+  
 status = MLX90640_DumpEE (MLX90640_ADR, eeMLX90640);
 status = MLX90640_ExtractParameters(eeMLX90640, &mlx90640);  
 }
@@ -89,25 +63,15 @@ float emissivity = 0.95;
 float tr;
 static uint16_t mlx90640Frame[834];
 static float mlx90640To[768];
-int status;  
-
-//  for(uint8_t rotation=0; rotation<4; rotation++) {
-    //tft.setRotation(rotation);
-    //testText();
-    //delay(1000);
-//  }
+int status;
 
 status = MLX90640_GetFrameData (MLX90640_ADR, mlx90640Frame);
-//MLX90640_SetInterleavedMode (MLX90640_ADR);
 tr = MLX90640_GetTa(mlx90640Frame, &mlx90640) - TA_SHIFT; //reflected temperature based on the sensor
 Serial.printf("\nSubpage %d\n", MLX90640_GetSubPageNumber(mlx90640Frame));
 dtostrf((double)tr, 4, 2, str_temp);
-Serial.printf("Ambient temperature: %s°C (%d)\n", str_temp, (int)tr);
+Serial.printf("Ambient temperature: %sÂ°C (%d)\n", str_temp, (int)tr);
 wdt_reset();
 MLX90640_CalculateTo(mlx90640Frame, &mlx90640, emissivity, tr, mlx90640To);
-
-//result = MLX90640_I2CRead(0x33, 0x800D, 1, &data);
-//  Serial.printf("Data: 0x%.4x Results: %d\n", data, result);
 
 /*
 Serial.printf("Frame:\n");
@@ -122,8 +86,8 @@ for(uint16_t i=0;i<768;i++)
 {
   if((i%32)==0) Serial.printf("\n");
   /* 4 is mininum width, 2 is precision; float value is copied onto str_temp*/
-  dtostrf((double)mlx90640To[i], 3, 0, str_temp);  
-  Serial.printf("%s ", str_temp);
+  dtostrf((double)mlx90640To[i], 2, 0, str_temp);  
+  Serial.printf("%s;", str_temp);
 }
 Serial.printf("\n");
 // -------------- subpage1?
@@ -133,11 +97,13 @@ tr = MLX90640_GetTa(mlx90640Frame, &mlx90640) - TA_SHIFT; //reflected temperatur
 Serial.printf("Subpage %d\n", MLX90640_GetSubPageNumber(mlx90640Frame));
 wdt_reset();
 delay(500);
-wdt_reset(); 
+wdt_reset();
+readSensor((int)mlx90640To[320]);
+tft.writePixel(120, 160, 1500);
 }
 
 unsigned long readSensor(int value) {
-/*  tft.fillScreen(ILI9341_BLACK);
+  tft.fillScreen(ILI9341_BLACK);
   unsigned long start = micros();
   tft.setCursor(0, 0);
   tft.setTextColor(ILI9341_WHITE);  tft.setTextSize(1);
@@ -146,8 +112,8 @@ unsigned long readSensor(int value) {
   tft.println(value);
   tft.setTextColor(ILI9341_RED);    tft.setTextSize(3);
   tft.println(value, HEX);
-  tft.println();*/
-  /*tft.setTextColor(ILI9341_GREEN);
+  tft.println();
+  tft.setTextColor(ILI9341_GREEN);
   tft.setTextSize(5);
   tft.println("Groop");
   tft.setTextSize(2);
@@ -159,7 +125,7 @@ unsigned long readSensor(int value) {
   tft.println("Or I will rend thee");
   tft.println("in the gobberwarts");
   tft.println("with my blurglecruncheon,");
-  tft.println("see if I don't!");*/
+  tft.println("see if I don't!");
   return micros();// - start;
 }
 
@@ -205,5 +171,6 @@ uint8_t I2C_scan(void)
     Serial.println("done\n");
     return(detectedAddress);
 }
+
 
 
