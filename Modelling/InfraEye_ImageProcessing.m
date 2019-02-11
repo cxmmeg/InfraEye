@@ -26,7 +26,7 @@ Flame = [21 21 23 21 22 21 23 22 22 22 28 26 41 39 40 38 26 28 24 23 22 21 23 21
 22 22 25 23 23 23 24 23 25 28 41 42 47 46 50 48 48 47 48 45 42 38 31 25 23 21 24 22 22 21 23 22; 
 22 23 25 23 22 23 24 23 24 25 38 39 42 44 45 46 43 45 43 42 37 37 28 25 23 23 23 23 21 22 23 22]
 
-UpscaleFactor = 10
+UpscaleFactor = 4
 OutLength = UpscaleFactor*32 - UpscaleFactor
 OutWidth = UpscaleFactor*24 - UpscaleFactor
 
@@ -69,7 +69,7 @@ Hand = [19 18 21 17 18 19 22 18 19 19 22 18 19 20 22 19 20 20 22 19 20 20 22 19 
 21 21 21 22 21 21 24 25 28 28 30 30 29 29 30 30 27 24 22 22 20 21 22 22 19 20 21 21 19 19 22 23 
 ]
 
-UpscaleFactor = 10
+UpscaleFactor = 4
 OutLength = UpscaleFactor*32 - UpscaleFactor
 OutWidth = UpscaleFactor*24 - UpscaleFactor
 

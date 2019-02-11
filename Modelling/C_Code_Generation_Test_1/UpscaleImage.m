@@ -1,6 +1,6 @@
 function Output = UpscaleImage(InputArray)
 
-UpscaleFactor = 8;
+UpscaleFactor = 4;
 OutLength = 32*UpscaleFactor - UpscaleFactor;
 OutWidth = 24*UpscaleFactor - UpscaleFactor;
 
