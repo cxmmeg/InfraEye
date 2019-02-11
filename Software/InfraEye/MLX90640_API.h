@@ -63,3 +63,4 @@
     void MLX90640_BadPixelsCorrection(uint16_t *pixels, float *to, int mode, paramsMLX90640 *params);
     
 #endif
+
