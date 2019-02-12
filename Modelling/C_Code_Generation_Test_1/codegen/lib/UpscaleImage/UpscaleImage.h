@@ -2,7 +2,7 @@
  * File: UpscaleImage.h
  *
  * MATLAB Coder version            : 2.7
- * C/C++ source code generated on  : 11-Feb-2019 21:56:40
+ * C/C++ source code generated on  : 12-Feb-2019 20:43:04
  */
 
 #ifndef __UPSCALEIMAGE_H__
@@ -16,7 +16,7 @@
 #include "UpscaleImage_types.h"
 
 /* Function Declarations */
-extern void UpscaleImage(const float InputArray[768], float Output[11408]);
+extern void UpscaleImage(const float InputArray[768], float Output[2852]);
 extern void UpscaleImage_initialize(void);
 extern void UpscaleImage_terminate(void);
 

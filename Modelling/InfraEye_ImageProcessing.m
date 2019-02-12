@@ -1,3 +1,5 @@
+clear
+clc
 %% Flame
 %% Output array from sensor 
 % 24x32
@@ -26,14 +28,18 @@ Flame = [21 21 23 21 22 21 23 22 22 22 28 26 41 39 40 38 26 28 24 23 22 21 23 21
 22 22 25 23 23 23 24 23 25 28 41 42 47 46 50 48 48 47 48 45 42 38 31 25 23 21 24 22 22 21 23 22; 
 22 23 25 23 22 23 24 23 24 25 38 39 42 44 45 46 43 45 43 42 37 37 28 25 23 23 23 23 21 22 23 22]
 
-UpscaleFactor = 4
+UpscaleFactor = 8
 OutLength = UpscaleFactor*32 - UpscaleFactor
 OutWidth = UpscaleFactor*24 - UpscaleFactor
 
 % Mesh defined - 24x32
-[X,Y] = meshgrid(0:UpscaleFactor:OutLength,0:UpscaleFactor:OutWidth);
-% Mesh define - 220x300
-[Xq,Yq] = meshgrid(0:1:OutLength - 1, 0:1:OutWidth - 1);
+X = 0:UpscaleFactor:OutLength
+Y = 0:UpscaleFactor:OutWidth
+
+Xq = 0:1:OutLength-1;
+Yq = (0:1:OutWidth-1)';
+
+% Mesh define
 % Interpolation
 FlameInterpolated = interp2(X,Y,Flame,Xq,Yq,'cubic');
 
@@ -69,7 +75,7 @@ Hand = [19 18 21 17 18 19 22 18 19 19 22 18 19 20 22 19 20 20 22 19 20 20 22 19 
 21 21 21 22 21 21 24 25 28 28 30 30 29 29 30 30 27 24 22 22 20 21 22 22 19 20 21 21 19 19 22 23 
 ]
 
-UpscaleFactor = 4
+UpscaleFactor = 8
 OutLength = UpscaleFactor*32 - UpscaleFactor
 OutWidth = UpscaleFactor*24 - UpscaleFactor
 
