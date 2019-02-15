@@ -67,7 +67,7 @@ while(nMemAddressRead>0)
 
 void MLX90640_I2CFreqSet(int freq)
 {
-    Wire.setClock(freq*1000);
+    //Wire.setClock(freq*1000);
 }
 
 int MLX90640_I2CWrite(uint8_t slaveAddr, uint16_t writeAddress, uint16_t data)

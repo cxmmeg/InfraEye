@@ -3,7 +3,7 @@
 #include "MLX90640_API.h"
 #include "MLX90640_I2C_driver.h"
 #include <Wire.h>
-//#include "UpscaleImage.h"
+#include "UpscaleImage.h"
 
 #define STMPE_CS 16
 #define TFT_CS   0
@@ -25,135 +25,150 @@ void setup()
   uint16_t data;
   uint8_t address;
   int status; 
-  
+
+  // Initialize serial port for debugging
   Serial.begin(115200);
+  // Initialize LCD
   tft.begin();
-  Wire.begin();
-
-  delay(10);
+  tft.fillRect(0, 0, 240, 320, 0x0000);
+  // Initialize I2C
+  Wire.begin();  
+  Wire.setClock(800000);
   Serial.println("\nInfraEye boot...");
+  // Scan I2C to make sure IR sensor is present
   address = I2C_scan();
-
+  // Initialize IR sensor
   MLX90640_SetResolution(MLX90640_ADR, 0x03);
   Serial.println("Get MLX90640 resolution:");
   result = MLX90640_GetCurResolution(0x33);
   Serial.println(result);
-  MLX90640_SetRefreshRate(MLX90640_ADR, 0x01);
-  Wire.setClock(400000);
-  
-  // read diagnostics (optional but can help debug problems)
-/*  uint8_t x = tft.readcommand8(ILI9341_RDMODE);
-  Serial.print("Display Power Mode: 0x"); Serial.println(x, HEX);
-  x = tft.readcommand8(ILI9341_RDMADCTL);
-  Serial.print("MADCTL Mode: 0x"); Serial.println(x, HEX);
-  x = tft.readcommand8(ILI9341_RDPIXFMT);
-  Serial.print("Pixel Format: 0x"); Serial.println(x, HEX);
-  x = tft.readcommand8(ILI9341_RDIMGFMT);
-  Serial.print("Image Format: 0x"); Serial.println(x, HEX);
-  x = tft.readcommand8(ILI9341_RDSELFDIAG);
-  Serial.print("Self Diagnostic: 0x"); Serial.println(x, HEX); 
-  */
-status = MLX90640_DumpEE (MLX90640_ADR, eeMLX90640);
-status = MLX90640_ExtractParameters(eeMLX90640, &mlx90640);  
-tft.fillRect(0, 0, 240, 320, 0x0000);
+  MLX90640_SetRefreshRate(MLX90640_ADR, 0x03);
+  MLX90640_SetInterleavedMode(MLX90640_ADR);  
+  status = MLX90640_DumpEE (MLX90640_ADR, eeMLX90640);
+  status = MLX90640_ExtractParameters(eeMLX90640, &mlx90640);  
 }
-
 
 void loop(void)
 {
   int result = -55;
   uint16_t data;
   uint8_t address;
-char str_temp[6];
-float emissivity = 0.95;
-float tr;
-static uint16_t mlx90640Frame[834];
-static float mlx90640To[768];
-static float upscaledTo[11408];
-int status;
-uint16_t frameColor[768];
-float min_t = 300;
-float max_t = -40;
+  char str_temp[6];
+  float emissivity = 0.95;
+  float tr;
+  static uint16_t mlx90640Frame[834];
+  static float mlx90640To[768];
+  static float upscaledTo[2852];
+  int status;
+  uint16_t frameColor[768];
+  float min_t = 300;
+  float max_t = -40;
+  static float FPS = 0;
+  unsigned long time_start, time_1, time_2, time_3, time_4, time_5, time_end;
+  uint8_t subPage;
+  uint8_t dataReady = 0;
+  uint16_t registerValue;
+  uint8_t error;
 
-status = MLX90640_GetFrameData (MLX90640_ADR, mlx90640Frame);
-Serial.printf("Status:%d\n", status);
-tr = MLX90640_GetTa(mlx90640Frame, &mlx90640) - TA_SHIFT; //reflected temperature based on the sensor
-Serial.printf("\nSubpage %d\n", MLX90640_GetSubPageNumber(mlx90640Frame));
-dtostrf((double)tr, 4, 2, str_temp);
-Serial.printf("Ambient temperature: %sÂ°C (%d)\n", str_temp, (int)tr);
-wdt_reset();
-MLX90640_CalculateTo(mlx90640Frame, &mlx90640, emissivity, tr, mlx90640To);
-MLX90640_BadPixelsCorrection((&mlx90640)->brokenPixels, mlx90640To, 1, &mlx90640);
-MLX90640_BadPixelsCorrection((&mlx90640)->outlierPixels, mlx90640To, 1, &mlx90640);
+  // -------------- Wait for new subpage- --------------------
+  time_start = micros();
+  while(dataReady == 0)
+  {
+    error = MLX90640_I2CRead(MLX90640_ADR, 0x8000, 1, &registerValue);
+    if(error != 0)
+    {
+      Serial.printf("Error while reading status register. Error code:%d\n", error);      
+    }    
+    dataReady = registerValue & 0x0008;
+    wdt_reset();
+  }
+  subPage = registerValue & 0x0001;
+  Serial.printf("Subpage %d\n", subPage);
+  time_1 = micros();
 
-//UpscaleImage(mlx90640To, upscaledTo);
-/*
-Serial.printf("Frame:\n");
-for(uint16_t i=0;i<834;i++)
-{
-  if((i%32)==0) Serial.printf("\n");  
-  Serial.printf(" %.4x", mlx90640Frame[i]);
-}*/
+  // -------------- Read subframe ----------------------------
+  status = MLX90640_GetFrameData(MLX90640_ADR, mlx90640Frame);
+  Serial.printf("Status:%d\n", status);
+  time_2 = micros();
+  
+  // -------------- Calculate temperature of subframe --------
+  tr = MLX90640_GetTa(mlx90640Frame, &mlx90640) - TA_SHIFT; //reflected temperature based on the sensor
+  dtostrf((double)tr, 4, 2, str_temp);
+  Serial.printf("Ambient temperature: %sÂ°C (%d)\n", str_temp, (int)tr);
+  wdt_reset();
+  MLX90640_CalculateTo(mlx90640Frame, &mlx90640, emissivity, tr, mlx90640To);
+  time_3 = micros();
 
-for(uint16_t i=0;i<768;i++)
-{
-  if(mlx90640To[i] > max_t) max_t = mlx90640To[i];
-  if(mlx90640To[i] < min_t) min_t = mlx90640To[i];
+  // -------------- Wait for RR - 20 % -----------------------
+  for(uint16_t i=0;i<768;i++)
+  {
+    if(mlx90640To[i] > max_t) max_t = mlx90640To[i];
+    if(mlx90640To[i] < min_t) min_t = mlx90640To[i];
+  }
+  
+  //min_t = 15;
+  //max_t = 40;
+  Convert(mlx90640To, frameColor, 768,
+    colorPalete, 403,
+    min_t, max_t);
+  time_4 = micros();
+  Serial.printf("Temperatures:\n");
+  
+  for(uint16_t i=0;i<768;i++)
+  {
+    uint16_t x, y;
+
+    y = (i/32);
+    if((y%2)==subPage)
+    {
+      x = (31-(i%32));
+  //if((((subPage+i+(y%2))%2)==1))
+    {
+    //  if((i%32)==0) Serial.printf("\n");
+    // 4 is mininum width, 2 is precision; float value is copied onto str_temp
+    //  dtostrf((double)mlx90640To[i], 2, 0, str_temp);  
+    //  Serial.printf("%s;", str_temp);
+      //Serial.printf("x%dy%d ", x, y);  
+      //tft.drawPixel(x, y, (int)mlx90640To[i]);
+      //tft.drawPixel(x, y, frameColor[i]);
+      tft.fillRect(x*8, y*8, 8, 8, frameColor[i]);
+    }
+    }
+  }
+  
+  tft.fillRect(0, 200, 240, 80, 0x0000);
+  tft.setCursor(10, 200);
+  tft.setTextColor(ILI9341_WHITE);  tft.setTextSize(3);
+  dtostrf((double)max_t, 3, 0, str_temp);
+  tft.printf("Tmax=%s°C", str_temp);
+  tft.setCursor(10, 240);
+  dtostrf((double)min_t, 3, 0, str_temp);
+  tft.printf("Tmin=%s°C", str_temp);
+  dtostrf((double)FPS, 2, 1, str_temp);
+  tft.setTextColor(ILI9341_WHITE);  tft.setTextSize(1);
+  tft.setCursor(10, 270);
+  tft.printf("%sFPS", str_temp);
+  time_5 = micros();
+  /*
+  for(uint16_t i=0;i<2852;i++)
+  {
+    uint16_t x, y;
+  
+    x = i%320;
+    y = i/320;
+  //  tft.drawPixel(x, y, (int)upscaledTo[i]);
+  }
+  */
+//  MLX90640_BadPixelsCorrection((&mlx90640)->brokenPixels, mlx90640To, 1, &mlx90640);
+//  MLX90640_BadPixelsCorrection((&mlx90640)->outlierPixels, mlx90640To, 1, &mlx90640);
+  
+  //UpscaleImage(mlx90640To, upscaledTo);
+
+  time_end = micros();
+  FPS = (float)1000000 / ((float)time_end-(float)time_start);
+  Serial.printf("%d %d %d %d %d %d %d\n", time_1-time_start, time_2-time_1, time_3-time_2, time_4-time_3, time_5-time_4, time_end-time_5, time_end-time_start);
 }
-
-Convert(mlx90640To, frameColor, 768,
-  colorPalete, 403,
-  min_t, max_t);
-
-Serial.printf("Temperatures:\n");
-
-for(uint16_t i=0;i<768;i++)
-{
-  uint16_t x, y;
-  x = (i%32)*8;
-  y = (i/32)*8;
-//  if((i%32)==0) Serial.printf("\n");
-// 4 is mininum width, 2 is precision; float value is copied onto str_temp
-//  dtostrf((double)mlx90640To[i], 2, 0, str_temp);  
-//  Serial.printf("%s;", str_temp);
-  //Serial.printf("x%dy%d ", x, y);  
-  //tft.drawPixel(x, y, (int)mlx90640To[i]);
-  //tft.drawPixel(x, y, frameColor[i]);
-  tft.fillRect(x, y, 8, 8, frameColor[i]);
-}
-tft.fillRect(0, 200, 240, 80, 0x0000);
-tft.setCursor(10, 200);
-tft.setTextColor(ILI9341_WHITE);  tft.setTextSize(3);
-dtostrf((double)max_t, 3, 0, str_temp);
-tft.printf("Tmax=%s°C", str_temp);
-tft.setCursor(10, 240);
-dtostrf((double)min_t, 3, 0, str_temp);
-tft.printf("Tmin=%s°C", str_temp);
-/*
-for(uint16_t i=0;i<2852;i++)
-{
-  uint16_t x, y;
-
-  x = i%320;
-  y = i/320;
-//  tft.drawPixel(x, y, (int)upscaledTo[i]);
-}
-*/
-Serial.printf("\n");
-// -------------- subpage1?
-//delay(100);
-wdt_reset();
-tr = MLX90640_GetTa(mlx90640Frame, &mlx90640) - TA_SHIFT; //reflected temperature based on the sensor
-Serial.printf("Subpage %d\n", MLX90640_GetSubPageNumber(mlx90640Frame));
-wdt_reset();
-//delay(100);
-//wdt_reset();
-//readSensor((int)mlx90640To[320]);
-//tft.writePixel(120, 160, 1500);
-//tft.fillRect(0, 0, 240, 240, 32000);
-
-}
-
+  
 void Convert(float *frameTemperature, uint16_t *frameColor, uint16_t frameSize,
   const uint16_t *colorScale, uint16_t colorScaleSize,
   float minTemperature, float maxTemperature)
@@ -163,8 +178,8 @@ void Convert(float *frameTemperature, uint16_t *frameColor, uint16_t frameSize,
   float constDegToScale;
   uint16_t colorIndex;
 
-  //if(minTemperature>15) minTemperature = 15;
-  //if(maxTemperature<50) maxTemperature = 50;
+  if(minTemperature>15) minTemperature = 15;
+  if(maxTemperature<50) maxTemperature = 50;
 
   constDegToScale = ((float)maxTemperature - (float)minTemperature) / ((float)colorScaleSize - (float)1);
   Serial.printf("constDegToScale=%d maxTemperature=%d minTemperature=%d colorScaleSize=%d\n", (int)constDegToScale, maxTemperature, minTemperature, colorScaleSize);
