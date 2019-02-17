@@ -3,16 +3,19 @@
 #include "MLX90640_API.h"
 #include "MLX90640_I2C_driver.h"
 #include <Wire.h>
-#include "UpscaleImage.h"
+#include "module_ImageUpscaling.h"
 
-#define STMPE_CS 16
-#define TFT_CS   0
-#define TFT_DC   2//4//15
-#define SD_CS    0
+#define STMPE_CS    16
+#define TFT_CS      0
+#define TFT_DC      2//4//15
+#define SD_CS       0
 #define RAW_IMAGE
 
 #define MLX90640_ADR 0x33
 #define TA_SHIFT 8 //the default shift for a MLX90640 device in open air
+
+#define SENSOR_NUM_OF_POINTS_D    (INPUT_ARRAY_LENGTH_D*INPUT_ARRAY_WIDTH_D)
+
 Adafruit_ILI9341 tft = Adafruit_ILI9341(TFT_CS, TFT_DC);
 
 uint16_t eeMLX90640[832];
@@ -46,6 +49,9 @@ void setup()
   MLX90640_SetInterleavedMode(MLX90640_ADR);  
   status = MLX90640_DumpEE (MLX90640_ADR, eeMLX90640);
   status = MLX90640_ExtractParameters(eeMLX90640, &mlx90640);  
+  
+  /* Initialize upscaling module */
+  img_up_vResetUpscaling();
 }
 
 void loop(void)
@@ -57,10 +63,10 @@ void loop(void)
   float emissivity = 0.95;
   float tr;
   static uint16_t mlx90640Frame[834];
-  static float mlx90640To[768];
-  static float upscaledTo[2852];
+  static float mlx90640To[SENSOR_NUM_OF_POINTS_D];
+  static float afUpscaleBuffer[OUTPUT_BUFFER_SIZE_D];
   int status;
-  uint16_t frameColor[768];
+  uint16_t frameColor[OUTPUT_BUFFER_SIZE_D];
   float min_t = 300;
   float max_t = -40;
   static float FPS = 0;
@@ -70,7 +76,7 @@ void loop(void)
   uint16_t registerValue;
   uint8_t error;
 
-  // -------------- Wait for new subpage- --------------------
+  // -------------- Wait for new subpage- -------------------------------
   time_start = micros();
   while(dataReady == 0)
   {
@@ -86,53 +92,53 @@ void loop(void)
   Serial.printf("Subpage %d\n", subPage);
   time_1 = micros();
 
-  // -------------- Read subframe ----------------------------
+  // -------------- Read subframe ----------------------------------------
   status = MLX90640_GetFrameData(MLX90640_ADR, mlx90640Frame);
   Serial.printf("Status:%d\n", status);
   time_2 = micros();
   
-  // -------------- Calculate temperature of subframe --------
+  // -------------- Calculate temperature of subframe ---------------------
   tr = MLX90640_GetTa(mlx90640Frame, &mlx90640) - TA_SHIFT; //reflected temperature based on the sensor
   dtostrf((double)tr, 4, 2, str_temp);
   Serial.printf("Ambient temperature: %sÂ°C (%d)\n", str_temp, (int)tr);
   wdt_reset();
   MLX90640_CalculateTo(mlx90640Frame, &mlx90640, emissivity, tr, mlx90640To);
   time_3 = micros();
-
-  // -------------- Wait for RR - 20 % -----------------------
-  for(uint16_t i=0;i<768;i++)
+  
+  // -------------- Find max. an min. temperature --------------------------
+  for(uint16_t i = 0; i < SENSOR_NUM_OF_POINTS_D; i++)
   {
     if(mlx90640To[i] > max_t) max_t = mlx90640To[i];
     if(mlx90640To[i] < min_t) min_t = mlx90640To[i];
   }
   
-  //min_t = 15;
-  //max_t = 40;
-  Convert(mlx90640To, frameColor, 768,
-    colorPalete, 403,
-    min_t, max_t);
-  time_4 = micros();
-  Serial.printf("Temperatures:\n");
+  // -------------- Upscale temperature image and display -------------------
   
-  for(uint16_t i=0;i<768;i++)
+    img_up_vResetUpscaling();
+  
+  for (uint16_t u16Iterator = 0; u16Iterator < (OUTPUT_NUM_OF_PIXELS_D / OUTPUT_BUFFER_SIZE_D); u16Iterator++)
   {
-    uint16_t x, y;
+    
+    // -------------- Upscale temperature image ---------------
+    img_up_vUpscaleImage(mlx90640Frame, afUpscaleBuffer, OUTPUT_BUFFER_SIZE_D);
+  
+    // -------------- Convert temperature to color code -------
 
-    y = (i/32);
-    if((y%2)==subPage)
+    Convert(afUpscaleBuffer, frameColor, OUTPUT_BUFFER_SIZE_D, colorPalete, 403, min_t, max_t);
+    time_4 = micros();
+    Serial.printf("Temperatures:\n");
+    
+    for(uint16_t i = 0; i < OUTPUT_BUFFER_SIZE_D; i++)
     {
-      x = (31-(i%32));
-  //if((((subPage+i+(y%2))%2)==1))
-    {
-    //  if((i%32)==0) Serial.printf("\n");
-    // 4 is mininum width, 2 is precision; float value is copied onto str_temp
-    //  dtostrf((double)mlx90640To[i], 2, 0, str_temp);  
-    //  Serial.printf("%s;", str_temp);
-      //Serial.printf("x%dy%d ", x, y);  
-      //tft.drawPixel(x, y, (int)mlx90640To[i]);
-      //tft.drawPixel(x, y, frameColor[i]);
-      tft.fillRect(x*8, y*8, 8, 8, frameColor[i]);
-    }
+      //TODO - rework indexing
+      uint16_t x, y;
+  
+      y = (i/32);
+      if((y%2) == subPage)
+      {
+        x = (31 - (i % 32));
+        tft.drawPixel(x, y, frameColor[i]);
+      }
     }
   }
   
@@ -149,20 +155,9 @@ void loop(void)
   tft.setCursor(10, 270);
   tft.printf("%sFPS", str_temp);
   time_5 = micros();
-  /*
-  for(uint16_t i=0;i<2852;i++)
-  {
-    uint16_t x, y;
   
-    x = i%320;
-    y = i/320;
-  //  tft.drawPixel(x, y, (int)upscaledTo[i]);
-  }
-  */
 //  MLX90640_BadPixelsCorrection((&mlx90640)->brokenPixels, mlx90640To, 1, &mlx90640);
 //  MLX90640_BadPixelsCorrection((&mlx90640)->outlierPixels, mlx90640To, 1, &mlx90640);
-  
-  //UpscaleImage(mlx90640To, upscaledTo);
 
   time_end = micros();
   FPS = (float)1000000 / ((float)time_end-(float)time_start);
@@ -267,6 +262,3 @@ uint8_t I2C_scan(void)
     Serial.println("done\n");
     return(detectedAddress);
 }
-
-
-
