@@ -29,8 +29,8 @@ Flame = [21 21 23 21 22 21 23 22 22 22 28 26 41 39 40 38 26 28 24 23 22 21 23 21
 22 23 25 23 22 23 24 23 24 25 38 39 42 44 45 46 43 45 43 42 37 37 28 25 23 23 23 23 21 22 23 22]
 
 UpscaleFactor = 8
-OutLength = UpscaleFactor*32-UpscaleFactor
-OutWidth = UpscaleFactor*24-UpscaleFactor
+OutLength = UpscaleFactor*32 - UpscaleFactor
+OutWidth = UpscaleFactor*24 - UpscaleFactor
 
 % Mesh defined - 24x32
 X = 0:UpscaleFactor:OutLength
@@ -76,8 +76,8 @@ Hand = [19 18 21 17 18 19 22 18 19 19 22 18 19 20 22 19 20 20 22 19 20 20 22 19 
 ]
 
 UpscaleFactor = 8
-OutLength = UpscaleFactor*32-UpscaleFactor
-OutWidth = UpscaleFactor*24-UpscaleFactor
+OutLength = UpscaleFactor*32 - UpscaleFactor
+OutWidth = UpscaleFactor*24 - UpscaleFactor
 
 % Mesh defined - 24x32
 [X,Y] = meshgrid(0:UpscaleFactor:OutLength,0:UpscaleFactor:OutWidth);
