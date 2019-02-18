@@ -99,13 +99,13 @@ void loop(void)
 
   // -------------- Read subframe ----------------------------
   status = MLX90640_GetFrameData(MLX90640_ADR, mlx90640Frame);
-  Serial.printf("Status:%d\n", status);
+  //Serial.printf("Status:%d\n", status);
   time_2 = micros();
 
   // -------------- Calculate temperature of subframe --------
   tr = MLX90640_GetTa(mlx90640Frame, &mlx90640) - TA_SHIFT; //reflected temperature based on the sensor
   dtostrf((double)tr, 4, 2, str_temp);
-  Serial.printf("Ambient temperature: %sÂ°C (%d)\n", str_temp, (int)tr);
+  Serial.printf("Ambient temperature: %s°C (%d)\n", str_temp, (int)tr);
   wdt_reset();
   MLX90640_CalculateTo(mlx90640Frame, &mlx90640, emissivity, tr, mlx90640To);
   
@@ -129,7 +129,7 @@ void loop(void)
   {
     
     // -------------- Upscale temperature image ---------------
-    img_up_vUpscaleImage((uint16_t*)mlx90640To, afUpscaleBuffer, OUTPUT_BUFFER_SIZE_D);
+    img_up_vUpscaleImage(mlx90640To, afUpscaleBuffer, OUTPUT_BUFFER_SIZE_D);
   
     // -------------- Convert temperature to color code -------
 
@@ -137,27 +137,31 @@ void loop(void)
         
     for(uint16_t i = 0; i < OUTPUT_BUFFER_SIZE_D; i++)
     {
-      u16DispCoordinateY = (u16DisplayIterator / OUTPUT_ARRAY_WIDTH_D);
+      u16DispCoordinateY = u16DisplayIterator / OUTPUT_ARRAY_LENGTH_D;
       //if((u16DispCoordinateY % 2) == subPage)
       {
-        u16DispCoordinateX = ((OUTPUT_ARRAY_WIDTH_D - 1) - (u16DisplayIterator % OUTPUT_ARRAY_WIDTH_D));
+        u16DispCoordinateX = OUTPUT_ARRAY_LENGTH_D - (u16DisplayIterator % OUTPUT_ARRAY_LENGTH_D);
+        //u16DispCoordinateX = ((OUTPUT_ARRAY_LENGTH_D - 1) - (u16DisplayIterator % OUTPUT_ARRAY_LENGTH_D));
         /* Scaling factor is 4 - display pixel as 2x2 square */
-        //tft.fillRect(2 * u16DispCoordinateX, 2* u16DispCoordinateY, 2, 2, frameColor[i]);
-        tft.drawPixel(u16DispCoordinateX, u16DispCoordinateY, frameColor[i]);
+        tft.fillRect(2 * u16DispCoordinateY, 2* u16DispCoordinateX, 2, 2, frameColor[i]);
+        //tft.drawPixel(u16DispCoordinateY, u16DispCoordinateX, frameColor[i]);
       }
       
       u16DisplayIterator++;
+
+      
     }
   }
   time_4 = micros();
   wdt_reset();
 
+#if 0
   Convert(mlx90640To, frameColor1, 768, colorPalete, 403, min_t, max_t, subPage);
   #ifdef COLOR2CONSOLE
   printColorToConsole(frameColor1, 768, 32);
   #endif
   drawImage(frameColor1, 32, 24, 120, 0, 4, 0);
-  
+#endif
   
   tft.fillRect(0, 200, 240, 80, 0x0000);
   tft.setCursor(10, 200);

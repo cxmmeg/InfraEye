@@ -8,9 +8,9 @@
 #define OUTPUT_ARRAY_WIDTH_D    ((INPUT_ARRAY_WIDTH_D * SCALING_FACTOR_D) - SCALING_FACTOR_D)
 #define OUTPUT_NUM_OF_PIXELS_D  (OUTPUT_ARRAY_LENGTH_D * OUTPUT_ARRAY_WIDTH_D)
 // Output buffer size shall be multiple of OUTPUT_ARRAY_WIDTH_D
-#define OUTPUT_BUFFER_SIZE_D    (2 * OUTPUT_ARRAY_LENGTH_D)
+#define OUTPUT_BUFFER_SIZE_D    (8 * OUTPUT_ARRAY_LENGTH_D)
 
-void img_up_vUpscaleImage(uint16_t* pu16Array, float* fOutput, uint16_t u16BufferSize);
+void img_up_vUpscaleImage(float* pfArray, float* fOutput, uint16_t u16BufferSize);
 void img_up_vResetUpscaling(void);
 
 #endif // MODULE_IMAGE_UPSCALING_H_INCLUDED

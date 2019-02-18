@@ -3,10 +3,10 @@
 #include "stdio.h"
 #include "module_ImageUpscaling.h"
 
-    int16_t img_up_s16RowIterator;
-    int16_t img_up_s16ColumnIterator;
+static int16_t img_up_s16RowIterator;
+static int16_t img_up_s16ColumnIterator;
 
-void img_up_vUpscaleImage(uint16_t* pu16Array, float* fOutput, uint16_t u16BufferSize)
+void img_up_vUpscaleImage(float* pfArray, float* fOutput, uint16_t u16BufferSize)
 {
     int16_t s16LowIndexA;
     int16_t s16LowIndexPlus1;
@@ -58,25 +58,25 @@ void img_up_vUpscaleImage(uint16_t* pu16Array, float* fOutput, uint16_t u16Buffe
         dRx = ((double)img_up_s16ColumnIterator - (double)SCALING_FACTOR_D * ((double)s16LowIndexA - 1.0)) / (double)((SCALING_FACTOR_D * s16LowIndexA) -
         (SCALING_FACTOR_D * (s16LowIndexA - 1)));
 
-        if (pu16Array[(s16LowIndexB + INPUT_ARRAY_WIDTH_D * (s16LowIndexA - 1)) - 1] == pu16Array[(s16LowIndexB +
+        if (pfArray[(s16LowIndexB + INPUT_ARRAY_WIDTH_D * (s16LowIndexA - 1)) - 1] == pfArray[(s16LowIndexB +
            INPUT_ARRAY_WIDTH_D * s16LowIndexA) - 1])
         {
-            fQx_1 = (float)pu16Array[(s16LowIndexB + INPUT_ARRAY_WIDTH_D * (s16LowIndexA - 1)) - 1];
+            fQx_1 = pfArray[(s16LowIndexB + INPUT_ARRAY_WIDTH_D * (s16LowIndexA - 1)) - 1];
         }
         else
         {
-            fQx_1 = (float)(1.0 - dRx) * (float)pu16Array[(s16LowIndexB + INPUT_ARRAY_WIDTH_D * (s16LowIndexA - 1)) - 1] +
-                    (float)dRx * (float)pu16Array[(s16LowIndexB + INPUT_ARRAY_WIDTH_D* s16LowIndexA) - 1];
+            fQx_1 = (float)(1.0 - dRx) * pfArray[(s16LowIndexB + INPUT_ARRAY_WIDTH_D * (s16LowIndexA - 1)) - 1] +
+                    (float)dRx * pfArray[(s16LowIndexB + INPUT_ARRAY_WIDTH_D* s16LowIndexA) - 1];
         }
-        if (pu16Array[s16LowIndexB + INPUT_ARRAY_WIDTH_D * (s16LowIndexA - 1)] == pu16Array[s16LowIndexB + 32 *
+        if (pfArray[s16LowIndexB + INPUT_ARRAY_WIDTH_D * (s16LowIndexA - 1)] == pfArray[s16LowIndexB + 32 *
           s16LowIndexA])
         {
-            fQx_2 = (float)pu16Array[s16LowIndexB + INPUT_ARRAY_WIDTH_D * (s16LowIndexA - 1)];
+            fQx_2 = pfArray[s16LowIndexB + INPUT_ARRAY_WIDTH_D * (s16LowIndexA - 1)];
         }
         else
         {
-            fQx_2 = (float)(1.0 - dRx) * (float)pu16Array[s16LowIndexB + INPUT_ARRAY_WIDTH_D * (s16LowIndexA - 1)] +
-                    (float)dRx * (float)pu16Array[s16LowIndexB + INPUT_ARRAY_WIDTH_D * s16LowIndexA];
+            fQx_2 = (float)(1.0 - dRx) * pfArray[s16LowIndexB + INPUT_ARRAY_WIDTH_D * (s16LowIndexA - 1)] +
+                    (float)dRx * pfArray[s16LowIndexB + INPUT_ARRAY_WIDTH_D * s16LowIndexA];
         }
         if (fQx_1 == fQx_2)
         {
@@ -94,8 +94,15 @@ void img_up_vUpscaleImage(uint16_t* pu16Array, float* fOutput, uint16_t u16Buffe
         /* Increment counter */
         u16Counter++;
         /* Set column and row */
-        img_up_s16ColumnIterator = u16Counter % OUTPUT_ARRAY_LENGTH_D;
-        img_up_s16RowIterator = u16Counter/OUTPUT_ARRAY_LENGTH_D;
+        if(u16Counter % OUTPUT_ARRAY_LENGTH_D == 0)
+        {
+          img_up_s16RowIterator++;
+          img_up_s16ColumnIterator = 0;
+        }
+        else
+        {
+          img_up_s16ColumnIterator++;
+        }
     }
 }
 
