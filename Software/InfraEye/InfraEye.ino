@@ -3,13 +3,16 @@
 #include "MLX90640_API.h"
 #include "MLX90640_I2C_driver.h"
 #include <Wire.h>
-#include "UpscaleImage.h"
+#include "module_ImageUpscaling.h"
 
-#define STMPE_CS 16
+//#define STMPE_CS 16 // Not used yet
 #define TFT_CS   0
 #define TFT_DC   2//4//15
-#define SD_CS    0
+// #define SD_CS    0 // Not used yet
 #define RAW_IMAGE
+
+//#define TEMPERATURE2CONSOLE   // Debug print of 768 temperatures to console
+//#define COLOR2CONSOLE   // Debug print of 768 uint16_t colors to console
 
 #define MLX90640_ADR 0x33
 #define TA_SHIFT 8 //the default shift for a MLX90640 device in open air
@@ -30,7 +33,7 @@ void setup()
   Serial.begin(115200);
   // Initialize LCD
   tft.begin();
-  tft.fillRect(0, 0, 240, 320, 0x0000);
+  tft.fillRect(0, 0, 240, 320, 0x00031);
   // Initialize I2C
   Wire.begin();  
   Wire.setClock(800000);
@@ -45,22 +48,22 @@ void setup()
   MLX90640_SetRefreshRate(MLX90640_ADR, 0x03);
   MLX90640_SetInterleavedMode(MLX90640_ADR);  
   status = MLX90640_DumpEE (MLX90640_ADR, eeMLX90640);
-  status = MLX90640_ExtractParameters(eeMLX90640, &mlx90640);  
+  status = MLX90640_ExtractParameters(eeMLX90640, &mlx90640); 
 }
 
 void loop(void)
 {
   int result = -55;
   uint16_t data;
-  uint8_t address;
   char str_temp[6];
   float emissivity = 0.95;
   float tr;
   static uint16_t mlx90640Frame[834];
   static float mlx90640To[768];
-  static float upscaledTo[2852];
+  static float afUpscaleBuffer[OUTPUT_BUFFER_SIZE_D]; 
   int status;
-  uint16_t frameColor[768];
+  static uint16_t frameColor[OUTPUT_BUFFER_SIZE_D]; // scaled
+  static uint16_t frameColor1[768];                 // not scaled
   float min_t = 300;
   float max_t = -40;
   static float FPS = 0;
@@ -69,6 +72,9 @@ void loop(void)
   uint8_t dataReady = 0;
   uint16_t registerValue;
   uint8_t error;
+    uint16_t u16DisplayIterator;
+  uint16_t u16DispCoordinateX, u16DispCoordinateY;
+
 
   // -------------- Wait for new subpage- --------------------
   time_start = micros();
@@ -84,57 +90,73 @@ void loop(void)
   }
   subPage = registerValue & 0x0001;
   Serial.printf("Subpage %d\n", subPage);
+  //error = MLX90640_I2CWrite(MLX90640_ADR, 0x8000, (registerValue && ~0x0008));
+  //if(error != 0)
+  {
+    //Serial.printf("Error while reading status register. Error code:%d\n", error);      
+  }    
   time_1 = micros();
 
   // -------------- Read subframe ----------------------------
   status = MLX90640_GetFrameData(MLX90640_ADR, mlx90640Frame);
   Serial.printf("Status:%d\n", status);
   time_2 = micros();
-  
+
   // -------------- Calculate temperature of subframe --------
   tr = MLX90640_GetTa(mlx90640Frame, &mlx90640) - TA_SHIFT; //reflected temperature based on the sensor
   dtostrf((double)tr, 4, 2, str_temp);
   Serial.printf("Ambient temperature: %sÂ°C (%d)\n", str_temp, (int)tr);
   wdt_reset();
   MLX90640_CalculateTo(mlx90640Frame, &mlx90640, emissivity, tr, mlx90640To);
+  
+  #ifdef TEMPERATURE2CONSOLE
+  printTemperaturesToConsole(mlx90640To, 768, 32);
+  #endif
+  
   time_3 = micros();
-
+  
   // -------------- Wait for RR - 20 % -----------------------
   for(uint16_t i=0;i<768;i++)
   {
     if(mlx90640To[i] > max_t) max_t = mlx90640To[i];
-    if(mlx90640To[i] < min_t) min_t = mlx90640To[i];
+    if(mlx90640To[i] < min_t) min_t = mlx90640To[i];    
   }
-  
-  //min_t = 15;
-  //max_t = 40;
-  Convert(mlx90640To, frameColor, 768,
-    colorPalete, 403,
-    min_t, max_t);
-  time_4 = micros();
-  Serial.printf("Temperatures:\n");
-  
-  for(uint16_t i=0;i<768;i++)
+  // -------------- Upscale ----------------------------------
+  img_up_vResetUpscaling();
+  u16DisplayIterator = 0;
+/*  
+  for (uint16_t u16Iterator = 0; u16Iterator < (OUTPUT_NUM_OF_PIXELS_D / OUTPUT_BUFFER_SIZE_D); u16Iterator++)
   {
-    uint16_t x, y;
+    
+    // -------------- Upscale temperature image ---------------
+    img_up_vUpscaleImage((uint16_t*)mlx90640To, afUpscaleBuffer, OUTPUT_BUFFER_SIZE_D);
+  
+    // -------------- Convert temperature to color code -------
 
-    y = (i/32);
-    if((y%2)==subPage)
+    Convert(afUpscaleBuffer, frameColor, OUTPUT_BUFFER_SIZE_D, colorPalete, 403, min_t, max_t, subPage);
+        
+    for(uint16_t i = 0; i < OUTPUT_BUFFER_SIZE_D; i++)
     {
-      x = (31-(i%32));
-  //if((((subPage+i+(y%2))%2)==1))
-    {
-    //  if((i%32)==0) Serial.printf("\n");
-    // 4 is mininum width, 2 is precision; float value is copied onto str_temp
-    //  dtostrf((double)mlx90640To[i], 2, 0, str_temp);  
-    //  Serial.printf("%s;", str_temp);
-      //Serial.printf("x%dy%d ", x, y);  
-      //tft.drawPixel(x, y, (int)mlx90640To[i]);
-      //tft.drawPixel(x, y, frameColor[i]);
-      tft.fillRect(x*8, y*8, 8, 8, frameColor[i]);
+      u16DispCoordinateY = (u16DisplayIterator / OUTPUT_ARRAY_WIDTH_D);
+      if((u16DispCoordinateY % 2) == subPage)
+      {
+        u16DispCoordinateX = ((OUTPUT_ARRAY_WIDTH_D - 1) - (u16DisplayIterator % OUTPUT_ARRAY_WIDTH_D));
+        /* Scaling factor is 4 - display pixel as 2x2 square */
+/*        //tft.fillRect(2 * u16DispCoordinateX, 2* u16DispCoordinateY, 2, 2, frameColor[i]);
+        //tft.drawPixel(u16DispCoordinateX, u16DispCoordinateY, frameColor[i]);
+      }
+      
+      u16DisplayIterator++;
     }
-    }
-  }
+  }*/
+  time_4 = micros();
+  wdt_reset();
+
+  Convert(mlx90640To, frameColor1, 768, colorPalete, 403, min_t, max_t, subPage);
+  #ifdef COLOR2CONSOLE
+  printColorToConsole(frameColor1, 768, 32);
+  #endif
+  drawImage(frameColor1, 32, 24, 120, 0, 4, 1);
   
   tft.fillRect(0, 200, 240, 80, 0x0000);
   tft.setCursor(10, 200);
@@ -149,29 +171,49 @@ void loop(void)
   tft.setCursor(10, 270);
   tft.printf("%sFPS", str_temp);
   time_5 = micros();
-  /*
-  for(uint16_t i=0;i<2852;i++)
-  {
-    uint16_t x, y;
-  
-    x = i%320;
-    y = i/320;
-  //  tft.drawPixel(x, y, (int)upscaledTo[i]);
-  }
-  */
 //  MLX90640_BadPixelsCorrection((&mlx90640)->brokenPixels, mlx90640To, 1, &mlx90640);
 //  MLX90640_BadPixelsCorrection((&mlx90640)->outlierPixels, mlx90640To, 1, &mlx90640);
-  
-  //UpscaleImage(mlx90640To, upscaledTo);
-
   time_end = micros();
   FPS = (float)1000000 / ((float)time_end-(float)time_start);
-  Serial.printf("%d %d %d %d %d %d %d\n", time_1-time_start, time_2-time_1, time_3-time_2, time_4-time_3, time_5-time_4, time_end-time_5, time_end-time_start);
+  Serial.printf("Waiting for data ready%d us\tGetFrame %dus\tCalculateTemperature %dus\nUpscale, Convert, write do LCD %dus\tDisplay text %dus\tTotal period %dms\n", time_1-time_start, time_2-time_1, time_3-time_2, time_4-time_3, time_5-time_4, time_end-time_5, (time_end-time_start)/1000);
+}
+
+void drawImage(uint16_t *colorArray, uint8_t columns, uint8_t rows, uint8_t x0, uint8_t y0, uint8_t pixelSize, uint8_t debug)
+{
+  char str_temp[6];
+  uint16_t x, y;
+  
+  for(uint16_t i=0;i<columns*rows;i++)
+  {
+    x = (columns-(i%columns)) + x0;
+    y = (i/columns) + y0;    
+  //if((((subPage+i+(y%2))%2)==1))
+    {
+      if(debug==1)
+      {
+        if((i%columns)==0)
+        {
+          Serial.printf("\n");
+          wdt_reset();
+        }
+        //dtostrf(colorArray[i], 2, 0, str_temp);  
+        //Serial.printf("%s;", str_temp);
+        Serial.printf("%.2x;", colorArray[i]);
+      }      
+      if(pixelSize==1)
+      {
+        tft.drawPixel(x, y, colorArray[i]);
+      }else
+      {
+        tft.fillRect(x*pixelSize, y*pixelSize, pixelSize, pixelSize, colorArray[i]);
+      }
+    }    
+  }
 }
   
 void Convert(float *frameTemperature, uint16_t *frameColor, uint16_t frameSize,
   const uint16_t *colorScale, uint16_t colorScaleSize,
-  float minTemperature, float maxTemperature)
+  float minTemperature, float maxTemperature, uint8_t subPage)
 {
   uint16_t i;
   //uint16_t constDegToScale;
@@ -182,26 +224,28 @@ void Convert(float *frameTemperature, uint16_t *frameColor, uint16_t frameSize,
   if(maxTemperature<50) maxTemperature = 50;
 
   constDegToScale = ((float)maxTemperature - (float)minTemperature) / ((float)colorScaleSize - (float)1);
-  Serial.printf("constDegToScale=%d maxTemperature=%d minTemperature=%d colorScaleSize=%d\n", (int)constDegToScale, maxTemperature, minTemperature, colorScaleSize);
+//  Serial.printf("constDegToScale=%d maxTemperature=%d minTemperature=%d colorScaleSize=%d\n", (int)constDegToScale, maxTemperature, minTemperature, colorScaleSize);
 
   for(i=0; i<frameSize; i++)
   {
-    if((frameTemperature[i] >= minTemperature) && (frameTemperature[i] <= maxTemperature))
+    if(((i/32)%2)==subPage)
     {
-      colorIndex = (uint16_t)((frameTemperature[i] - (float)minTemperature) / constDegToScale);
-    }else
-    {
-      colorIndex = 0;
+      if((frameTemperature[i] >= minTemperature) && (frameTemperature[i] <= maxTemperature))
+      {
+        colorIndex = (uint16_t)((frameTemperature[i] - (float)minTemperature) / constDegToScale);
+      }else
+      {
+        colorIndex = 0;
+      }
+      //Serial.printf("%.4x", (int)frameTemperature[i]);
+      //if((i%32)==0)
+      //{
+      //  Serial.printf("\n");
+      //  wdt_reset();
+      //}
+      frameColor[i] = colorScale[colorIndex];
     }
-    //Serial.printf("%.4x", (int)frameTemperature[i]);
-    //if((i%32)==0)
-    //{
-    //  Serial.printf("\n");
-    //  wdt_reset();
-    //}
-    frameColor[i] = colorScale[colorIndex];
   }
-  Serial.printf("frameColor=%d frameTemperature[320]=%d\n", frameColor[320], (int)frameTemperature[320]);
 }
 
 unsigned long readSensor(int value) {
@@ -268,5 +312,22 @@ uint8_t I2C_scan(void)
     return(detectedAddress);
 }
 
+void printTemperaturesToConsole(float *mlx90640To, uint16_t pixelCount, uint8_t rowLength)
+{
+  for(uint16_t i=0;i<768;i++)
+  {
+    if((i%32)==0) Serial.printf("\n");
+    Serial.printf("%d ", (uint8_t)mlx90640To[i]);
+  }
+  Serial.printf("\n");
+}
 
-
+void printColorToConsole(uint16_t *color, uint16_t pixelCount, uint8_t rowLength)
+{
+  for(uint16_t i=0;i<768;i++)
+  {
+    if((i%32)==0) Serial.printf("\n");
+    Serial.printf("%x ", color[i]);
+  }
+  Serial.printf("\n");
+}
