@@ -124,7 +124,7 @@ void loop(void)
   // -------------- Upscale ----------------------------------
   img_up_vResetUpscaling();
   u16DisplayIterator = 0;
-/*  
+  
   for (uint16_t u16Iterator = 0; u16Iterator < (OUTPUT_NUM_OF_PIXELS_D / OUTPUT_BUFFER_SIZE_D); u16Iterator++)
   {
     
@@ -138,17 +138,17 @@ void loop(void)
     for(uint16_t i = 0; i < OUTPUT_BUFFER_SIZE_D; i++)
     {
       u16DispCoordinateY = (u16DisplayIterator / OUTPUT_ARRAY_WIDTH_D);
-      if((u16DispCoordinateY % 2) == subPage)
+      //if((u16DispCoordinateY % 2) == subPage)
       {
         u16DispCoordinateX = ((OUTPUT_ARRAY_WIDTH_D - 1) - (u16DisplayIterator % OUTPUT_ARRAY_WIDTH_D));
         /* Scaling factor is 4 - display pixel as 2x2 square */
-/*        //tft.fillRect(2 * u16DispCoordinateX, 2* u16DispCoordinateY, 2, 2, frameColor[i]);
-        //tft.drawPixel(u16DispCoordinateX, u16DispCoordinateY, frameColor[i]);
+        //tft.fillRect(2 * u16DispCoordinateX, 2* u16DispCoordinateY, 2, 2, frameColor[i]);
+        tft.drawPixel(u16DispCoordinateX, u16DispCoordinateY, frameColor[i]);
       }
       
       u16DisplayIterator++;
     }
-  }*/
+  }
   time_4 = micros();
   wdt_reset();
 
@@ -156,11 +156,12 @@ void loop(void)
   #ifdef COLOR2CONSOLE
   printColorToConsole(frameColor1, 768, 32);
   #endif
-  drawImage(frameColor1, 32, 24, 120, 0, 4, 1);
+  drawImage(frameColor1, 32, 24, 120, 0, 4, 0);
+  
   
   tft.fillRect(0, 200, 240, 80, 0x0000);
   tft.setCursor(10, 200);
-  tft.setTextColor(ILI9341_WHITE);  tft.setTextSize(3);
+  tft.setTextColor(ILI9341_WHITE);  tft.setTextSize(2);
   dtostrf((double)max_t, 3, 0, str_temp);
   tft.printf("Tmax=%s°C", str_temp);
   tft.setCursor(10, 240);
@@ -178,17 +179,18 @@ void loop(void)
   Serial.printf("Waiting for data ready%d us\tGetFrame %dus\tCalculateTemperature %dus\nUpscale, Convert, write do LCD %dus\tDisplay text %dus\tTotal period %dms\n", time_1-time_start, time_2-time_1, time_3-time_2, time_4-time_3, time_5-time_4, time_end-time_5, (time_end-time_start)/1000);
 }
 
-void drawImage(uint16_t *colorArray, uint8_t columns, uint8_t rows, uint8_t x0, uint8_t y0, uint8_t pixelSize, uint8_t debug)
+void drawImage(uint16_t *colorArray, uint16_t columns, uint16_t rows, uint16_t x0, uint16_t y0, uint8_t pixelSize, uint8_t debug)
 {
   char str_temp[6];
   uint16_t x, y;
-  
+  //tft.fillRect(0, 0, 8, 8, 0xFFFF);
   for(uint16_t i=0;i<columns*rows;i++)
   {
-    x = (columns-(i%columns)) + x0;
-    y = (i/columns) + y0;    
+    x = (columns-(i%columns));    
+    y = (i/columns);
+    
   //if((((subPage+i+(y%2))%2)==1))
-    {
+
       if(debug==1)
       {
         if((i%columns)==0)
@@ -199,15 +201,16 @@ void drawImage(uint16_t *colorArray, uint8_t columns, uint8_t rows, uint8_t x0, 
         //dtostrf(colorArray[i], 2, 0, str_temp);  
         //Serial.printf("%s;", str_temp);
         Serial.printf("%.2x;", colorArray[i]);
-      }      
+      }
+      Serial.printf("|x%dy%dc%x| ", x, y, colorArray[i]);      
       if(pixelSize==1)
       {
-        tft.drawPixel(x, y, colorArray[i]);
+        tft.drawPixel(x+x0, y+y0, colorArray[i]);
       }else
       {
-        tft.fillRect(x*pixelSize, y*pixelSize, pixelSize, pixelSize, colorArray[i]);
+        tft.fillRect(x*pixelSize+x0, y*pixelSize+y0, pixelSize, pixelSize, colorArray[i]);
       }
-    }    
+        
   }
 }
   
