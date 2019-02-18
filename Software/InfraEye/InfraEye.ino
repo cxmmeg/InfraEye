@@ -13,7 +13,7 @@
 
 //#define TEMPERATURE2CONSOLE   // Debug print of 768 temperatures to console
 //#define COLOR2CONSOLE   // Debug print of 768 uint16_t colors to console
-#define LIVE_DATA   // defined - sensor data, not defined - static picture
+//#define LIVE_DATA   // defined - sensor data, not defined - static picture
 
 #define MLX90640_ADR 0x33
 #define TA_SHIFT 8 //the default shift for a MLX90640 device in open air
@@ -266,14 +266,15 @@ void Convert(float *frameTemperature, uint16_t *frameColor, uint16_t frameSize,
   constDegToScale = ((float)maxTemperature - (float)minTemperature) / ((float)colorScaleSize - (float)1);
 //  Serial.printf("constDegToScale=%d maxTemperature=%d minTemperature=%d colorScaleSize=%d\n", (int)constDegToScale, maxTemperature, minTemperature, colorScaleSize);
 
-  for(i=0; i<frameSize; i++)
+  for(i = 0; i < frameSize; i++)
   {
-    if(((i/32)%2)==subPage)
+    if(((i/OUTPUT_ARRAY_LENGTH_D) % 2) == subPage)
     {
       if((frameTemperature[i] >= minTemperature) && (frameTemperature[i] <= maxTemperature))
       {
         colorIndex = (uint16_t)((frameTemperature[i] - (float)minTemperature) / constDegToScale);
-      }else
+      }
+      else
       {
         colorIndex = 0;
       }
