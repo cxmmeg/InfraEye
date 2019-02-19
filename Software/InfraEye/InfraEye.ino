@@ -155,34 +155,37 @@ void loop(void)
     if(mlx90640To[i] < min_t) min_t = mlx90640To[i];    
   }
   // -------------- Upscale ----------------------------------
-  img_up_vResetUpscaling();
-  u16DisplayIterator = 0;
-  
-  for (uint16_t u16Iterator = 0; u16Iterator < (OUTPUT_NUM_OF_PIXELS_D / OUTPUT_BUFFER_SIZE_D); u16Iterator++)
+  if(subPage==1)  // All pixels are gathered
   {
+    img_up_vResetUpscaling();
+    u16DisplayIterator = 0;
     
-    // -------------- Upscale temperature image ---------------
-    img_up_vUpscaleImage(mlx90640To, afUpscaleBuffer, OUTPUT_BUFFER_SIZE_D);
-  
-    // -------------- Convert temperature to color code -------
-
-    Convert(afUpscaleBuffer, frameColor, OUTPUT_BUFFER_SIZE_D, colorPalete, 403, min_t, max_t, subPage);
-        
-    for(uint16_t i = 0; i < OUTPUT_BUFFER_SIZE_D; i++)
+    for (uint16_t u16Iterator = 0; u16Iterator < (OUTPUT_NUM_OF_PIXELS_D / OUTPUT_BUFFER_SIZE_D); u16Iterator++)
     {
-      u16DispCoordinateY = u16DisplayIterator / OUTPUT_ARRAY_LENGTH_D;
-      //if((u16DispCoordinateY % 2) == subPage)
+      
+      // -------------- Upscale temperature image ---------------
+      img_up_vUpscaleImage(mlx90640To, afUpscaleBuffer, OUTPUT_BUFFER_SIZE_D);
+    
+      // -------------- Convert temperature to color code -------
+  
+      Convert(afUpscaleBuffer, frameColor, OUTPUT_BUFFER_SIZE_D, colorPalete, 403, min_t, max_t, subPage);
+          
+      for(uint16_t i = 0; i < OUTPUT_BUFFER_SIZE_D; i++)
       {
-        u16DispCoordinateX = OUTPUT_ARRAY_LENGTH_D - (u16DisplayIterator % OUTPUT_ARRAY_LENGTH_D);
-        //u16DispCoordinateX = ((OUTPUT_ARRAY_LENGTH_D - 1) - (u16DisplayIterator % OUTPUT_ARRAY_LENGTH_D));
-        /* Scaling factor is 4 - display pixel as 2x2 square */
-        tft.fillRect(2 * u16DispCoordinateY, 2* u16DispCoordinateX, 2, 2, frameColor[i]);
-        //tft.drawPixel(u16DispCoordinateY, u16DispCoordinateX, frameColor[i]);
+        u16DispCoordinateY = u16DisplayIterator / OUTPUT_ARRAY_LENGTH_D;
+        //if((u16DispCoordinateY % 2) == subPage)
+        {
+          u16DispCoordinateX = OUTPUT_ARRAY_LENGTH_D - (u16DisplayIterator % OUTPUT_ARRAY_LENGTH_D);
+          //u16DispCoordinateX = ((OUTPUT_ARRAY_LENGTH_D - 1) - (u16DisplayIterator % OUTPUT_ARRAY_LENGTH_D));
+          /* Scaling factor is 4 - display pixel as 2x2 square */
+          tft.fillRect(2 * u16DispCoordinateY, 2* u16DispCoordinateX, 2, 2, frameColor[i]);
+          //tft.drawPixel(u16DispCoordinateY, u16DispCoordinateX, frameColor[i]);
+        }
+        
+        u16DisplayIterator++;
+  
+        
       }
-      
-      u16DisplayIterator++;
-
-      
     }
   }
   time_4 = micros();
@@ -195,22 +198,9 @@ void loop(void)
   #endif
   drawImage(frameColor1, 32, 24, 120, 0, 4, 0);
 #endif
-  
-  tft.fillRect(0, 200, 240, 80, 0x0000);
-  tft.setCursor(10, 200);
-  tft.setTextColor(ILI9341_WHITE);  tft.setTextSize(2);
-  dtostrf((double)max_t, 3, 0, str_temp);
-  tft.printf("Tmax=%s°C", str_temp);
-  tft.setCursor(10, 240);
-  dtostrf((double)min_t, 3, 0, str_temp);
-  tft.printf("Tmin=%s°C", str_temp);
-  dtostrf((double)FPS, 2, 1, str_temp);
-  tft.setTextColor(ILI9341_WHITE);  tft.setTextSize(1);
-  tft.setCursor(10, 270);
-  tft.printf("%sFPS", str_temp);
+
+  printStats(0, 190, max_t, min_t, FPS);
   time_5 = micros();
-//  MLX90640_BadPixelsCorrection((&mlx90640)->brokenPixels, mlx90640To, 1, &mlx90640);
-//  MLX90640_BadPixelsCorrection((&mlx90640)->outlierPixels, mlx90640To, 1, &mlx90640);
   time_end = micros();
   FPS = (float)1000000 / ((float)time_end-(float)time_start);
   Serial.printf("Waiting for data ready%d us\tGetFrame %dus\tCalculateTemperature %dus\nUpscale, Convert, write do LCD %dus\tDisplay text %dus\tTotal period %dms\n", time_1-time_start, time_2-time_1, time_3-time_2, time_4-time_3, time_5-time_4, time_end-time_5, (time_end-time_start)/1000);
@@ -260,8 +250,8 @@ void Convert(float *frameTemperature, uint16_t *frameColor, uint16_t frameSize,
   float constDegToScale;
   uint16_t colorIndex;
 
-  if(minTemperature>15) minTemperature = 15;
-  if(maxTemperature<50) maxTemperature = 50;
+//  if(minTemperature>15) minTemperature = 15;
+//  if(maxTemperature<50) maxTemperature = 50;
 
   constDegToScale = ((float)maxTemperature - (float)minTemperature) / ((float)colorScaleSize - (float)1);
 //  Serial.printf("constDegToScale=%d maxTemperature=%d minTemperature=%d colorScaleSize=%d\n", (int)constDegToScale, maxTemperature, minTemperature, colorScaleSize);
@@ -371,4 +361,38 @@ void printColorToConsole(uint16_t *color, uint16_t pixelCount, uint8_t rowLength
     Serial.printf("%x ", color[i]);
   }
   Serial.printf("\n");
+}
+
+void printStats(uint16_t x, uint16_t y, float max_t, float min_t, float FPS)
+{
+  static uint8_t first = 1;
+  char str_temp[6];
+  float constDegToScale;
+  uint16_t colorIndex;
+
+  if(first)
+  {
+    first = 0;
+    tft.fillRect(x, y, 240, 120, 0x0000);
+    tft.setTextColor(ILI9341_WHITE);
+    tft.setTextSize(2);
+    for(uint16_t i=0;i<240;i++)
+    {
+      constDegToScale = ((float)240 - (float)0) / ((float)403 - (float)1);
+      colorIndex = (uint16_t)(((float)i) / constDegToScale);
+      tft.fillRect(x+i, y, 1, 10, colorPalete[colorIndex]);
+    }
+  }  
+  tft.setCursor(x, y+10);  
+  dtostrf((double)min_t, 3, 0, str_temp);
+  tft.fillRect(x, y+10, 50, 15, 0x0000);
+  tft.printf("%sC", str_temp);
+  tft.setCursor(x+180, y+10);
+  dtostrf((double)max_t, 3, 0, str_temp);
+  tft.fillRect(x+180, y+10, 50, 15, 0x0000);
+  tft.printf("%sC", str_temp);
+  dtostrf((double)FPS, 2, 1, str_temp);  
+  tft.setCursor(x+0, y+100);
+  tft.fillRect(x+0, y+100, 35, 15, 0x0000);
+  tft.printf("%sFPS", str_temp);  
 }
