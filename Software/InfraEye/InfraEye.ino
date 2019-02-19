@@ -129,7 +129,7 @@ void loop(void)
   time_1 = micros();
 
   // -------------- Read subframe ----------------------------
-  status = MLX90640_GetFrameData(MLX90640_ADR, mlx90640Frame);
+  status = MLX90640_GetFrameData_Custom(MLX90640_ADR, mlx90640Frame, subPage);
   //Serial.printf("Status:%d\n", status);
   time_2 = micros();
 

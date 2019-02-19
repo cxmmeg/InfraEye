@@ -45,6 +45,30 @@ int MLX90640_DumpEE(uint8_t slaveAddr, uint16_t *eeData)
      return MLX90640_I2CRead(slaveAddr, 0x2400, 832, eeData);
 }
 
+int MLX90640_GetFrameData_Custom(uint8_t slaveAddr, uint16_t *frameData, uint8_t subPage)
+{
+    int error = 1;
+    uint16_t controlRegister1;
+    uint16_t statusRegister;
+
+    for(uint16_t i = 0; i<768;i=i+2)
+	{
+		MLX90640_I2CRead(slaveAddr, 0x0400 + i + subPage, 16, &frameData[i+subPage]); 
+	}
+
+	error = MLX90640_I2CRead(slaveAddr, 0x0400 + 768, 832-768, &frameData[768]); 
+        if(error != 0)
+        {
+            return error;
+        }
+        
+    error = MLX90640_I2CRead(slaveAddr, 0x800D, 1, &controlRegister1);
+    frameData[832] = controlRegister1;
+    frameData[833] = subPage;
+    
+    return frameData[833];    
+}
+
 int MLX90640_GetFrameData(uint8_t slaveAddr, uint16_t *frameData)
 {
     uint16_t dataReady = 1;
