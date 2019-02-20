@@ -121,7 +121,6 @@ void loop(void)
   }
   subPage = registerValue & 0x0001;
   Serial.printf("Subpage %d\n", subPage);
-  //error = MLX90640_I2CWrite(MLX90640_ADR, 0x8000, (registerValue && ~0x0008));
   //if(error != 0)
   {
     //Serial.printf("Error while reading status register. Error code:%d\n", error);      
@@ -130,6 +129,7 @@ void loop(void)
 
   // -------------- Read subframe ----------------------------
   status = MLX90640_GetFrameData_Custom(MLX90640_ADR, mlx90640Frame, subPage);
+   MLX90640_I2CWrite(MLX90640_ADR, 0x8000, 0x0010);
   //Serial.printf("Status:%d\n", status);
   time_2 = micros();
 
@@ -139,7 +139,7 @@ void loop(void)
   dtostrf((double)tr, 4, 2, str_temp);
   Serial.printf("Ambient temperature: %s°C (%d)\n", str_temp, (int)tr);
   wdt_reset();
-  MLX90640_CalculateTo(mlx90640Frame, &mlx90640, emissivity, tr, mlx90640To);
+  MLX90640_CalculateTo_Custom(mlx90640Frame, &mlx90640, emissivity, tr, mlx90640To);
   #endif
   
   #ifdef TEMPERATURE2CONSOLE
@@ -393,6 +393,6 @@ void printStats(uint16_t x, uint16_t y, float max_t, float min_t, float FPS)
   tft.printf("%sC", str_temp);
   dtostrf((double)FPS, 2, 1, str_temp);  
   tft.setCursor(x+0, y+100);
-  tft.fillRect(x+0, y+100, 35, 15, 0x0000);
+  tft.fillRect(x+0, y+100, 60, 15, 0x0000);
   tft.printf("%sFPS", str_temp);  
 }
