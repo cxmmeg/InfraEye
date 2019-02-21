@@ -73,7 +73,7 @@ void setup()
   Serial.println("Get MLX90640 resolution:");
   result = MLX90640_GetCurResolution(0x33);
   Serial.println(result);
-  MLX90640_SetRefreshRate(MLX90640_ADR, 0x02);
+  MLX90640_SetRefreshRate(MLX90640_ADR, 0x03);
   MLX90640_SetInterleavedMode(MLX90640_ADR);  
   status = MLX90640_DumpEE (MLX90640_ADR, eeMLX90640);
   status = MLX90640_ExtractParameters(eeMLX90640, &mlx90640); 
@@ -103,7 +103,7 @@ void loop(void)
   uint8_t dataReady = 0;
   uint16_t registerValue;
   uint8_t error;
-    uint16_t u16DisplayIterator;
+  static uint16_t u16DisplayIterator = 0;
   uint16_t u16DispCoordinateX, u16DispCoordinateY;
 
 
@@ -155,40 +155,42 @@ void loop(void)
     if(mlx90640To[i] < min_t) min_t = mlx90640To[i];    
   }
   // -------------- Upscale ----------------------------------
-  if(subPage==1)  // All pixels are gathered
+  if(subPage==0)
   {
     time_end = micros();
     FPS = (float)1000000 / ((float)time_end-(float)time_start);
     time_start = micros();
-    
     img_up_vResetUpscaling();
     u16DisplayIterator = 0;
-
-    for (uint16_t u16Iterator = 0; u16Iterator < (OUTPUT_NUM_OF_PIXELS_D / OUTPUT_BUFFER_SIZE_D); u16Iterator++)
-    {
-      
-      // -------------- Upscale temperature image ---------------
-      img_up_vUpscaleImage(mlx90640To, afUpscaleBuffer, OUTPUT_BUFFER_SIZE_D);
+  }
+  if(subPage==1)  // All pixels are gathered
+  {
     
-      // -------------- Convert temperature to color code -------
+  }
+  for (uint16_t u16Iterator = 0; u16Iterator < (OUTPUT_NUM_OF_PIXELS_D / OUTPUT_BUFFER_SIZE_D); u16Iterator++)
+  {
+    
+    // -------------- Upscale temperature image ---------------
+    img_up_vUpscaleImage(mlx90640To, afUpscaleBuffer, OUTPUT_BUFFER_SIZE_D);
   
-      Convert(afUpscaleBuffer, frameColor, OUTPUT_BUFFER_SIZE_D, colorPalete, 403, min_t, max_t, subPage);
-          
-      for(uint16_t i = 0; i < OUTPUT_BUFFER_SIZE_D; i++)
-      {
-        u16DispCoordinateX = OUTPUT_ARRAY_WIDTH_D - (u16DisplayIterator / OUTPUT_ARRAY_LENGTH_D);        
-        u16DispCoordinateY = u16DisplayIterator % OUTPUT_ARRAY_LENGTH_D;        
-        /* Scaling factor is 4 - display pixel as 2x2 square */
-        tft.fillRect(2 * u16DispCoordinateX, 2* u16DispCoordinateY, 2, 2, frameColor[i]);
-        //tft.drawPixel(u16DispCoordinateY, u16DispCoordinateX, frameColor[i]);               
-        u16DisplayIterator++;        
-      }
-      if(dataIsReady())
-      {
-        //continue;
-        break;
-      }      
+    // -------------- Convert temperature to color code -------
+
+    Convert(afUpscaleBuffer, frameColor, OUTPUT_BUFFER_SIZE_D, colorPalete, 403, min_t, max_t, subPage);
+        
+    for(uint16_t i = 0; i < OUTPUT_BUFFER_SIZE_D; i++)
+    {
+      u16DispCoordinateX = OUTPUT_ARRAY_WIDTH_D - (u16DisplayIterator / OUTPUT_ARRAY_LENGTH_D);        
+      u16DispCoordinateY = u16DisplayIterator % OUTPUT_ARRAY_LENGTH_D;        
+      /* Scaling factor is 4 - display pixel as 2x2 square */
+      tft.fillRect(2 * u16DispCoordinateX, 2* u16DispCoordinateY, 2, 2, frameColor[i]);
+      //tft.drawPixel(u16DispCoordinateY, u16DispCoordinateX, frameColor[i]);               
+      u16DisplayIterator++;        
     }
+    if(dataIsReady())
+    {
+      //continue;
+      break;
+    }      
   }
   time_4 = micros();
   wdt_reset();
