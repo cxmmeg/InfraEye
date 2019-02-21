@@ -95,8 +95,8 @@ void loop(void)
   int status;
   static uint16_t frameColor[OUTPUT_BUFFER_SIZE_D]; // scaled
   static uint16_t frameColor1[768];                 // not scaled
-  float min_t = 300;
-  float max_t = -40;
+  static float min_t = 300;
+  static float max_t = -40;
   static float FPS = 0;
   static unsigned long time_start, time_1, time_2, time_3, time_4, time_5, time_end;
   uint8_t subPage;
@@ -148,20 +148,22 @@ void loop(void)
   #endif
   
   time_3 = micros();
-    
-  for(uint16_t i=0;i<768;i++)
+  if((micros()/1000000)%2 == 0)
   {
-    if(mlx90640To[i] > max_t) max_t = mlx90640To[i];
-    if(mlx90640To[i] < min_t) min_t = mlx90640To[i];    
+    min_t = 300;
+    max_t = -40;
+    for(uint16_t i=0;i<768;i++)
+    {
+      if(mlx90640To[i] > max_t) max_t = mlx90640To[i];
+      if(mlx90640To[i] < min_t) min_t = mlx90640To[i];    
+    }
   }
   // -------------- Upscale ----------------------------------
   if(subPage==0)
   {
     time_end = micros();
     FPS = (float)1000000 / ((float)time_end-(float)time_start);
-    time_start = micros();
-    img_up_vResetUpscaling();
-    u16DisplayIterator = 0;
+    time_start = micros();    
   }
   if(subPage==1)  // All pixels are gathered
   {
@@ -186,11 +188,12 @@ void loop(void)
       //tft.drawPixel(u16DispCoordinateY, u16DispCoordinateX, frameColor[i]);               
       u16DisplayIterator++;        
     }
-    if(dataIsReady())
-    {
-      //continue;
-      break;
-    }      
+    if(dataIsReady()) break;  // We need to get new data -> Image processing interrupted
+  }
+  if(dataIsReady()==0)
+  { // Whole image has been processed, reset upscaling
+      img_up_vResetUpscaling();
+      u16DisplayIterator = 0;
   }
   time_4 = micros();
   wdt_reset();
@@ -203,7 +206,7 @@ void loop(void)
   drawImage(frameColor1, 32, 24, 120, 0, 4, 0);
 #endif
 
-  printStats(0, 190, max_t, min_t, FPS);
+  if((micros()/1000000)%2 == 0) printStats(0, 190, max_t, min_t, FPS);
   time_5 = micros();
   
   Serial.printf("Waiting for data ready%d us\tGetFrame %dus\tCalculateTemperature %dus\nUpscale, Convert, write do LCD %dus\tDisplay text %dus\tTotal period %dms\n", time_1-time_start, time_2-time_1, time_3-time_2, time_4-time_3, time_5-time_4, time_end-time_5, (time_end-time_start)/1000);
@@ -266,9 +269,7 @@ void Convert(float *frameTemperature, uint16_t *frameColor, uint16_t frameSize,
 
 //  if(minTemperature>15) minTemperature = 15;
 //  if(maxTemperature<50) maxTemperature = 50;
-  minTemperature = 15;
-  maxTemperature = 35;
-
+  
   constDegToScale = ((float)maxTemperature - (float)minTemperature) / ((float)colorScaleSize - (float)1);
 //  Serial.printf("constDegToScale=%d maxTemperature=%d minTemperature=%d colorScaleSize=%d\n", (int)constDegToScale, maxTemperature, minTemperature, colorScaleSize);
 
@@ -276,14 +277,16 @@ void Convert(float *frameTemperature, uint16_t *frameColor, uint16_t frameSize,
   {
     //if(((i/OUTPUT_ARRAY_LENGTH_D) % 2) == subPage)
     {
-      if((frameTemperature[i] >= minTemperature) && (frameTemperature[i] <= maxTemperature))
-      {
-        colorIndex = (uint16_t)((frameTemperature[i] - (float)minTemperature) / constDegToScale);
-      }
-      else
+      if(frameTemperature[i] < minTemperature)
       {
         colorIndex = 0;
-      }
+      }else if(frameTemperature[i] > maxTemperature)
+      {
+        colorIndex = colorScaleSize - 1;
+      }else
+      {
+        colorIndex = (uint16_t)((frameTemperature[i] - (float)minTemperature) / constDegToScale);
+      }      
       //Serial.printf("%.4x", (int)frameTemperature[i]);
       //if((i%32)==0)
       //{
