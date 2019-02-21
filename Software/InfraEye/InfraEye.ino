@@ -73,7 +73,7 @@ void setup()
   Serial.println("Get MLX90640 resolution:");
   result = MLX90640_GetCurResolution(0x33);
   Serial.println(result);
-  MLX90640_SetRefreshRate(MLX90640_ADR, 0x03);
+  MLX90640_SetRefreshRate(MLX90640_ADR, 0x02);
   MLX90640_SetInterleavedMode(MLX90640_ADR);  
   status = MLX90640_DumpEE (MLX90640_ADR, eeMLX90640);
   status = MLX90640_ExtractParameters(eeMLX90640, &mlx90640); 
@@ -98,7 +98,7 @@ void loop(void)
   float min_t = 300;
   float max_t = -40;
   static float FPS = 0;
-  unsigned long time_start, time_1, time_2, time_3, time_4, time_5, time_end;
+  static unsigned long time_start, time_1, time_2, time_3, time_4, time_5, time_end;
   uint8_t subPage;
   uint8_t dataReady = 0;
   uint16_t registerValue;
@@ -108,7 +108,7 @@ void loop(void)
 
 
   // -------------- Wait for new subpage- --------------------
-  time_start = micros();
+//  time_start = micros();
   while(dataReady == 0)
   {
     error = MLX90640_I2CRead(MLX90640_ADR, 0x8000, 1, &registerValue);
@@ -140,6 +140,7 @@ void loop(void)
   Serial.printf("Ambient temperature: %s°C (%d)\n", str_temp, (int)tr);
   wdt_reset();
   MLX90640_CalculateTo_Custom(mlx90640Frame, &mlx90640, emissivity, tr, mlx90640To);
+  //MLX90640_GetImage(mlx90640Frame, &mlx90640, mlx90640To);
   #endif
   
   #ifdef TEMPERATURE2CONSOLE
@@ -147,8 +148,7 @@ void loop(void)
   #endif
   
   time_3 = micros();
-  
-  // -------------- Wait for RR - 20 % -----------------------
+    
   for(uint16_t i=0;i<768;i++)
   {
     if(mlx90640To[i] > max_t) max_t = mlx90640To[i];
@@ -157,9 +157,13 @@ void loop(void)
   // -------------- Upscale ----------------------------------
   if(subPage==1)  // All pixels are gathered
   {
+    time_end = micros();
+    FPS = (float)1000000 / ((float)time_end-(float)time_start);
+    time_start = micros();
+    
     img_up_vResetUpscaling();
     u16DisplayIterator = 0;
-    
+
     for (uint16_t u16Iterator = 0; u16Iterator < (OUTPUT_NUM_OF_PIXELS_D / OUTPUT_BUFFER_SIZE_D); u16Iterator++)
     {
       
@@ -172,20 +176,18 @@ void loop(void)
           
       for(uint16_t i = 0; i < OUTPUT_BUFFER_SIZE_D; i++)
       {
-        u16DispCoordinateY = u16DisplayIterator / OUTPUT_ARRAY_LENGTH_D;
-        //if((u16DispCoordinateY % 2) == subPage)
-        {
-          u16DispCoordinateX = OUTPUT_ARRAY_LENGTH_D - (u16DisplayIterator % OUTPUT_ARRAY_LENGTH_D);
-          //u16DispCoordinateX = ((OUTPUT_ARRAY_LENGTH_D - 1) - (u16DisplayIterator % OUTPUT_ARRAY_LENGTH_D));
-          /* Scaling factor is 4 - display pixel as 2x2 square */
-          tft.fillRect(2 * u16DispCoordinateY, 2* u16DispCoordinateX, 2, 2, frameColor[i]);
-          //tft.drawPixel(u16DispCoordinateY, u16DispCoordinateX, frameColor[i]);
-        }
-        
-        u16DisplayIterator++;
-  
-        
+        u16DispCoordinateX = OUTPUT_ARRAY_WIDTH_D - (u16DisplayIterator / OUTPUT_ARRAY_LENGTH_D);        
+        u16DispCoordinateY = u16DisplayIterator % OUTPUT_ARRAY_LENGTH_D;        
+        /* Scaling factor is 4 - display pixel as 2x2 square */
+        tft.fillRect(2 * u16DispCoordinateX, 2* u16DispCoordinateY, 2, 2, frameColor[i]);
+        //tft.drawPixel(u16DispCoordinateY, u16DispCoordinateX, frameColor[i]);               
+        u16DisplayIterator++;        
       }
+      if(dataIsReady())
+      {
+        //continue;
+        break;
+      }      
     }
   }
   time_4 = micros();
@@ -201,9 +203,19 @@ void loop(void)
 
   printStats(0, 190, max_t, min_t, FPS);
   time_5 = micros();
-  time_end = micros();
-  FPS = (float)1000000 / ((float)time_end-(float)time_start);
+  
   Serial.printf("Waiting for data ready%d us\tGetFrame %dus\tCalculateTemperature %dus\nUpscale, Convert, write do LCD %dus\tDisplay text %dus\tTotal period %dms\n", time_1-time_start, time_2-time_1, time_3-time_2, time_4-time_3, time_5-time_4, time_end-time_5, (time_end-time_start)/1000);
+}
+
+uint8_t dataIsReady(void)
+{
+  uint8_t dataReady = 0;
+  uint8_t error;
+  uint16_t registerValue;
+
+  error = MLX90640_I2CRead(MLX90640_ADR, 0x8000, 1, &registerValue);
+  dataReady = registerValue & 0x0008;
+  return(dataReady);
 }
 
 void drawImage(uint16_t *colorArray, uint16_t columns, uint16_t rows, uint16_t x0, uint16_t y0, uint8_t pixelSize, uint8_t debug)
@@ -252,6 +264,8 @@ void Convert(float *frameTemperature, uint16_t *frameColor, uint16_t frameSize,
 
 //  if(minTemperature>15) minTemperature = 15;
 //  if(maxTemperature<50) maxTemperature = 50;
+  minTemperature = 15;
+  maxTemperature = 35;
 
   constDegToScale = ((float)maxTemperature - (float)minTemperature) / ((float)colorScaleSize - (float)1);
 //  Serial.printf("constDegToScale=%d maxTemperature=%d minTemperature=%d colorScaleSize=%d\n", (int)constDegToScale, maxTemperature, minTemperature, colorScaleSize);
