@@ -58,7 +58,7 @@ void IRsensor_Init(void)
   Serial.println("Get MLX90640 resolution:");
   result = MLX90640_GetCurResolution(0x33);
   Serial.println(result);
-  MLX90640_SetRefreshRate(MLX90640_ADR, 0x02);
+  MLX90640_SetRefreshRate(MLX90640_ADR, RR1Hz);
   MLX90640_SetInterleavedMode(MLX90640_ADR);  
   status = MLX90640_DumpEE (MLX90640_ADR, eeMLX90640);
   status = MLX90640_ExtractParameters(eeMLX90640, &mlx90640); 

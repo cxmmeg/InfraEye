@@ -7,11 +7,22 @@
 // IR sensor
 #define MLX90640_ADR 0x33
 #define TA_SHIFT 8 //the default shift for a MLX90640 device in open air
+enum RefreshRate
+{
+	RR0_5Hz,
+	RR1Hz,
+	RR2Hz,
+	RR4Hz,
+	RR8Hz,
+	RR16Hz,
+	RR32Hz,
+	RR64Hz
+};
 
 // LCD
 //#define STMPE_CS 16 // Not used yet
 #define TFT_CS   0
-#define TFT_DC   2//4//15
+#define TFT_DC   2
 // #define SD_CS    0 // Not used yet
 #define RAW_IMAGE
 
