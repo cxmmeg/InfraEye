@@ -27,7 +27,9 @@ void loop(void)
   static float min_t = 300;
   static float max_t = -40;
   static float FPS = 0;
-  static unsigned long time_start, time_1, time_2, time_3, time_4, time_5, time_end;
+  static unsigned long time_start, time_start2, time_1, time_2, time_3, time_4, time_5, time_end;
+  static unsigned long time_Wait, time_GetSubPage, time_UpScale, time_Convert, time_LCDWrite;
+  static unsigned long time_startframe, time_endframe;
   uint8_t subPage;
   uint8_t dataReady = 0;
   uint8_t error;
@@ -35,7 +37,7 @@ void loop(void)
   uint16_t u16DispCoordinateX, u16DispCoordinateY;
 
   // -------------- Wait for new subpage- --------------------
-//  time_start = micros();
+  time_start = micros();
   while(dataReady == 0)
   {
     dataReady = IRsensor_DataIsReady();
@@ -47,15 +49,14 @@ void loop(void)
   {
     //Serial.printf("Error while reading status register. Error code:%d\n", error);      
   }    
-  time_1 = micros();
-
+  time_Wait = micros() - time_start;
+  
   // -------------- Read subframe ----------------------------
   IRsensor_LoadSubPage(pixelValue);
   
   //Serial.printf("Status:%d\n", status);
-  time_2 = micros();  
-    
-  time_3 = micros();
+  time_GetSubPage = micros() - time_start - time_Wait;  
+ 
   if((micros()/1000000)%2 == 0)
   {
     IRsensor_UpdateMinMax(&min_t, &max_t, pixelValue);    
@@ -63,9 +64,13 @@ void loop(void)
   // -------------- Upscale ----------------------------------
   if(subPage==0)
   {
-    time_end = micros();
-    FPS = (float)1000000 / ((float)time_end-(float)time_start);
-    time_start = micros();    
+    time_endframe = micros();
+    FPS = (float)1000000 / ((float)time_endframe-(float)time_startframe);
+    time_startframe = micros();
+    Serial.printf("%dms\t %dms\t %dms\t %dms\t %dms\t %dms\n", time_Wait/1000, time_GetSubPage/1000, time_UpScale/1000, time_Convert/1000, time_LCDWrite/1000, (time_end-time_start)/1000);
+    time_UpScale = 0;
+    time_Convert = 0;
+    time_LCDWrite = 0;
   }
   if(subPage==1)  // All pixels are gathered
   {
@@ -75,12 +80,16 @@ void loop(void)
   {
     
     // -------------- Upscale temperature image ---------------
+    time_start2 = micros();
     img_up_vUpscaleImage(pixelValue, afUpscaleBuffer, OUTPUT_BUFFER_SIZE_D);
+    time_UpScale += micros() - time_start2;
   
     // -------------- Convert temperature to color code -------
-
+    time_start2 = micros();
     LCD_Convert(afUpscaleBuffer, frameColor, OUTPUT_BUFFER_SIZE_D, min_t, max_t, subPage);
-        
+    time_Convert += micros() - time_start2;
+
+    time_start2 = micros();
     for(uint16_t i = 0; i < OUTPUT_BUFFER_SIZE_D; i++)
     {
       u16DispCoordinateX = OUTPUT_ARRAY_WIDTH_D - (u16DisplayIterator / OUTPUT_ARRAY_LENGTH_D);        
@@ -90,6 +99,7 @@ void loop(void)
       //tft.drawPixel(u16DispCoordinateY, u16DispCoordinateX, frameColor[i]);               
       u16DisplayIterator++;        
     }
+    time_LCDWrite += micros() - time_start2;
     if(IRsensor_DataIsReady()) break;  // We need to get new data -> Image processing interrupted
   }
   if(IRsensor_DataIsReady()==0)
@@ -110,8 +120,6 @@ void loop(void)
 
   if((micros()/1000000)%2 == 0) LCD_PrintStats(0, 190, max_t, min_t, FPS);
   time_5 = micros();
-  
-  Serial.printf("Waiting for data ready%d us\tGetFrame %dus\tCalculateTemperature %dus\nUpscale, Convert, write do LCD %dus\tDisplay text %dus\tTotal period %dms\n", time_1-time_start, time_2-time_1, time_3-time_2, time_4-time_3, time_5-time_4, time_end-time_5, (time_end-time_start)/1000);
 }
 
 void printTemperaturesToConsole(float *mlx90640To, uint16_t pixelCount, uint8_t rowLength)
