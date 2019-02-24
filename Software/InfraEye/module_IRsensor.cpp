@@ -58,7 +58,7 @@ void IRsensor_Init(void)
   Serial.println("Get MLX90640 resolution:");
   result = MLX90640_GetCurResolution(0x33);
   Serial.println(result);
-  MLX90640_SetRefreshRate(MLX90640_ADR, RR1Hz);
+  MLX90640_SetRefreshRate(MLX90640_ADR, RR4Hz);
   MLX90640_SetInterleavedMode(MLX90640_ADR);  
   status = MLX90640_DumpEE (MLX90640_ADR, eeMLX90640);
   status = MLX90640_ExtractParameters(eeMLX90640, &mlx90640); 
@@ -139,10 +139,32 @@ void IRsensor_LoadSubPage(float* mlx90640To)
   #endif 
 }
 
-void IRsensor_UpdateMinMax(float* min_t, float* max_t, float* pixelValue)
+void IRsensor_LoadSubPage_u16(uint16_t* pixelValue)
 {
-	*min_t = 300;
-    *max_t = -40;
+	int status;
+
+	status = MLX90640_GetFrameData_Custom(MLX90640_ADR, mlx90640Frame, subPage);
+   MLX90640_I2CWrite(MLX90640_ADR, 0x8000, 0x0010);
+  #ifdef LIVE_DATA
+  // -------------- Calculate temperature of subframe --------
+  tr = MLX90640_GetTa(mlx90640Frame, &mlx90640) - TA_SHIFT; //reflected temperature based on the sensor
+  dtostrf((double)tr, 4, 2, str_temp);
+  Serial.printf("Ambient temperature: %s°C (%d)\n", str_temp, (int)tr);
+  wdt_reset();
+  MLX90640_CalculateTo_Custom_u16(mlx90640Frame, &mlx90640, emissivity, tr, pixelValue);
+  //MLX90640_GetImage(mlx90640Frame, &mlx90640, mlx90640To);
+  #endif
+
+   #ifdef TEMPERATURE2CONSOLE
+  printTemperaturesToConsole(mlx90640To, 768, 32);
+  #endif 
+}
+
+//void IRsensor_UpdateMinMax(float* min_t, float* max_t, float* pixelValue)
+void IRsensor_UpdateMinMax(float* min_t, float* max_t, uint16_t* pixelValue)
+{
+	*min_t = (300+50)*128;
+    *max_t = (-40+50)*128;
     for(uint16_t i=0;i<768;i++)
     {
       if(pixelValue[i] > *max_t) *max_t = pixelValue[i];
