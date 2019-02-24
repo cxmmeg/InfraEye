@@ -10,8 +10,19 @@
 // Output buffer size shall be multiple of OUTPUT_ARRAY_WIDTH_D
 #define OUTPUT_BUFFER_SIZE_D    (8 * OUTPUT_ARRAY_LENGTH_D)
 
+
+typedef enum
+{
+    FACTOR_0_E = 0,
+    FACTOR_0_25_E,
+    FACTOR_0_5_E,
+    FACTOR_0_75_E,
+    FACTOR_1_E
+}
+FACTOR_T;
+
 void img_up_vUpscaleImage(float* pfArray, float* fOutput, uint16_t u16BufferSize);
-void img_up_vUpscaleImage_u16(uint16_t* pfArray, uint16_t* fOutput, uint16_t u16BufferSize);
+void img_up_vUpscaleImage_u16(uint16_t* pu16Array, uint16_t* pu16Output, uint16_t u16BufferSize);
 void img_up_vResetUpscaling(void);
 
 #endif // MODULE_IMAGE_UPSCALING_H_INCLUDED
