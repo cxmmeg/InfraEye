@@ -5,6 +5,7 @@
 
 #ifdef LIVE_DATA
   static float pixelValue[768];
+  static uint16_t u16_pixelValue[768];
   #endif
 
 void setup()
@@ -20,7 +21,7 @@ void setup()
 void loop(void)
 {
   uint16_t data;
-  static float afUpscaleBuffer[OUTPUT_BUFFER_SIZE_D]; 
+  static uint16_t afUpscaleBuffer[OUTPUT_BUFFER_SIZE_D]; 
   int status;
   static uint16_t frameColor[OUTPUT_BUFFER_SIZE_D]; // scaled
   static uint16_t frameColor1[768];                 // not scaled
@@ -52,14 +53,17 @@ void loop(void)
   time_Wait = micros() - time_start;
   
   // -------------- Read subframe ----------------------------
-  IRsensor_LoadSubPage(pixelValue);
+  //IRsensor_LoadSubPage(pixelValue);
+  IRsensor_LoadSubPage_u16(u16_pixelValue);
   
   //Serial.printf("Status:%d\n", status);
   time_GetSubPage = micros() - time_start - time_Wait;  
  
   if((micros()/1000000)%2 == 0)
   {
-    IRsensor_UpdateMinMax(&min_t, &max_t, pixelValue);    
+    IRsensor_UpdateMinMax(&min_t, &max_t, u16_pixelValue);    
+//    min_t = 3820;
+//    max_t = 10240;
   }
   // -------------- Upscale ----------------------------------
   if(subPage==0)
@@ -81,12 +85,12 @@ void loop(void)
     
     // -------------- Upscale temperature image ---------------
     time_start2 = micros();
-    img_up_vUpscaleImage(pixelValue, afUpscaleBuffer, OUTPUT_BUFFER_SIZE_D);
+    img_up_vUpscaleImage_u16(u16_pixelValue, afUpscaleBuffer, OUTPUT_BUFFER_SIZE_D);
     time_UpScale += micros() - time_start2;
   
     // -------------- Convert temperature to color code -------
     time_start2 = micros();
-    LCD_Convert(afUpscaleBuffer, frameColor, OUTPUT_BUFFER_SIZE_D, min_t, max_t, subPage);
+    LCD_Convert_u16(afUpscaleBuffer, frameColor, OUTPUT_BUFFER_SIZE_D, min_t, max_t, subPage);
     time_Convert += micros() - time_start2;
 
     time_start2 = micros();

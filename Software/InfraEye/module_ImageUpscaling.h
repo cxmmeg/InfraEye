@@ -11,6 +11,7 @@
 #define OUTPUT_BUFFER_SIZE_D    (8 * OUTPUT_ARRAY_LENGTH_D)
 
 void img_up_vUpscaleImage(float* pfArray, float* fOutput, uint16_t u16BufferSize);
+void img_up_vUpscaleImage_u16(uint16_t* pfArray, uint16_t* fOutput, uint16_t u16BufferSize);
 void img_up_vResetUpscaling(void);
 
 #endif // MODULE_IMAGE_UPSCALING_H_INCLUDED
