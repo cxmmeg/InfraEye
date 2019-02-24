@@ -3,9 +3,26 @@
 #include "stdio.h"
 #include "module_ImageUpscaling.h"
 
+#define LOOK_UP_TABLE_D (0u)
+
 #if(SCALING_FACTOR_D == 4)
-static const double img_up_adRxCol_C[SCALING_FACTOR_D] = {0.000000, 0.250000, 0.500000, 0.750000};
-static const double img_up_adRxRow_C[SCALING_FACTOR_D] = {0.000000, 0.250000, 0.500000, 0.750000};
+static float img_up_afRxCol_C[SCALING_FACTOR_D] = {0.0, 0.25, 0.5, 0.75};
+static float img_up_afRxRow_C[SCALING_FACTOR_D] = {0.0, 0.25, 0.5, 0.75};
+#if LOOK_UP_TABLE_D
+static uint16_t img_up_au16LowIndexA_C[OUTPUT_ARRAY_LENGTH_D] = 
+{
+    1u,1u,1u,1u,        2u,2u,2u,2u,        3u,3u,3u,3u,        4u,4u,4u,4u,        5u,5u,5u,5u,        6u,6u,6u,6u,        7u,7u,7u,7u,        8u,8u,8u,8u,
+    9u,9u,9u,9u,        10u,10u,10u,10u,    11u,11u,11u,11u,    12u,12u,12u,12u,    13u,13u,13u,13u,    14u,14u,14u,14u,    15u,15u,15u,15u,    16u,16u,16u,16u,
+    17u,17u,17u,17u,    18u,18u,18u,18u,    19u,19u,19u,19u,    20u,20u,20u,20u,    21u,21u,21u,21u,    22u,22u,22u,22u,    23u,23u,23u,23u 
+};
+static uint16_t img_up_au16LowIndexB_C[OUTPUT_ARRAY_WIDTH_D] = 
+{
+    1u,1u,1u,1u,        2u,2u,2u,2u,        3u,3u,3u,3u,        4u,4u,4u,4u,        5u,5u,5u,5u,        6u,6u,6u,6u,        7u,7u,7u,7u,        8u,8u,8u,8u,
+    9u,9u,9u,9u,        10u,10u,10u,10u,    11u,11u,11u,11u,    12u,12u,12u,12u,    13u,13u,13u,13u,    14u,14u,14u,14u,    15u,15u,15u,15u,    16u,16u,16u,16u,
+    17u,17u,17u,17u,    18u,18u,18u,18u,    19u,19u,19u,19u,    20u,20u,20u,20u,    21u,21u,21u,21u,    22u,22u,22u,22u,    23u,23u,23u,23u,    24u,24u,24u,24u,
+    25u,25u,25u,25u,    26u,26u,26u,26u,    27u,27u,27u,27u,    28u,28u,28u,28u,    29u,29u,29u,29u,    30u,30u,30u,30u,    31u,31u,31u,31u
+};
+#endif
 #endif
 
 
@@ -19,7 +36,7 @@ void img_up_vUpscaleImage(float* pfArray, float* fOutput, uint16_t u16BufferSize
     uint16_t u16HighIndex;
     uint16_t u16MiddleIndex;
     uint16_t u16LowIndexB;
-    double dRx;
+    float fRx;
     float fQx_1;
     float fQx_2;
     uint16_t u16Counter = 0;
@@ -27,6 +44,11 @@ void img_up_vUpscaleImage(float* pfArray, float* fOutput, uint16_t u16BufferSize
     /*  Interpolation */
     while((img_up_u16RowIterator < OUTPUT_ARRAY_WIDTH_D) && (img_up_u16ColumnIterator < OUTPUT_ARRAY_LENGTH_D) && (u16Counter < u16BufferSize))
     {
+
+#if(LOOK_UP_TABLE_D)
+        u16LowIndexA = img_up_au16LowIndexA_C[img_up_u16ColumnIterator];
+        u16LowIndexB = img_up_au16LowIndexB_C[img_up_u16RowIterator];
+#else
         u16LowIndexA = 1;
         u16LowIndexPlus1 = 2;
         u16HighIndex = INPUT_ARRAY_LENGTH_D;
@@ -60,13 +82,15 @@ void img_up_vUpscaleImage(float* pfArray, float* fOutput, uint16_t u16BufferSize
               u16HighIndex = u16MiddleIndex;
             }
         }
+#endif
 
 #if(SCALING_FACTOR_D == 4)
-        dRx = img_up_adRxCol_C[img_up_u16ColumnIterator % SCALING_FACTOR_D];
+        fRx = img_up_afRxCol_C[img_up_u16ColumnIterator % SCALING_FACTOR_D];
 #else
-        dRx = ((double)img_up_u16ColumnIterator - (double)SCALING_FACTOR_D * ((double)u16LowIndexA - 1.0)) / (double)((SCALING_FACTOR_D * u16LowIndexA) -
+        fRx = ((float)img_up_u16ColumnIterator - (float)SCALING_FACTOR_D * ((float)u16LowIndexA - 1.0)) / (float)((SCALING_FACTOR_D * u16LowIndexA) -
         (SCALING_FACTOR_D * (u16LowIndexA - 1)));
 #endif
+
         if (pfArray[(u16LowIndexB + INPUT_ARRAY_WIDTH_D * (u16LowIndexA - 1)) - 1] == pfArray[(u16LowIndexB +
            INPUT_ARRAY_WIDTH_D * u16LowIndexA) - 1])
         {
@@ -74,8 +98,8 @@ void img_up_vUpscaleImage(float* pfArray, float* fOutput, uint16_t u16BufferSize
         }
         else
         {
-            fQx_1 = (float)(1.0 - dRx) * pfArray[(u16LowIndexB + INPUT_ARRAY_WIDTH_D * (u16LowIndexA - 1)) - 1] +
-                    (float)dRx * pfArray[(u16LowIndexB + INPUT_ARRAY_WIDTH_D* u16LowIndexA) - 1];
+            fQx_1 = (1.0 - fRx) * pfArray[(u16LowIndexB + INPUT_ARRAY_WIDTH_D * (u16LowIndexA - 1)) - 1] +
+                    fRx * pfArray[(u16LowIndexB + INPUT_ARRAY_WIDTH_D* u16LowIndexA) - 1];
         }
         if (pfArray[u16LowIndexB + INPUT_ARRAY_WIDTH_D * (u16LowIndexA - 1)] == pfArray[u16LowIndexB + INPUT_ARRAY_WIDTH_D * u16LowIndexA])
         {
@@ -83,8 +107,8 @@ void img_up_vUpscaleImage(float* pfArray, float* fOutput, uint16_t u16BufferSize
         }
         else
         {
-            fQx_2 = (float)(1.0 - dRx) * pfArray[u16LowIndexB + INPUT_ARRAY_WIDTH_D * (u16LowIndexA - 1)] +
-                    (float)dRx * pfArray[u16LowIndexB + INPUT_ARRAY_WIDTH_D * u16LowIndexA];
+            fQx_2 = (1.0 - fRx) * pfArray[u16LowIndexB + INPUT_ARRAY_WIDTH_D * (u16LowIndexA - 1)] +
+                    fRx * pfArray[u16LowIndexB + INPUT_ARRAY_WIDTH_D * u16LowIndexA];
         }
         if (fQx_1 == fQx_2)
         {
@@ -92,12 +116,12 @@ void img_up_vUpscaleImage(float* pfArray, float* fOutput, uint16_t u16BufferSize
         else
         {
 #if(SCALING_FACTOR_D == 4)
-            dRx = img_up_adRxRow_C[img_up_u16RowIterator % SCALING_FACTOR_D];
+            fRx = img_up_afRxRow_C[img_up_u16RowIterator % SCALING_FACTOR_D];
 #else
-            dRx = ((double)img_up_u16RowIterator - (double)SCALING_FACTOR_D * ((double)u16LowIndexB - 1.0)) / (double)((SCALING_FACTOR_D * u16LowIndexB) -
+            fRx = ((float)img_up_u16RowIterator - (float)SCALING_FACTOR_D * ((float)u16LowIndexB - 1.0)) / (float)((SCALING_FACTOR_D * u16LowIndexB) -
             (SCALING_FACTOR_D * (u16LowIndexB - 1)));
 #endif
-            fQx_1 = (float)(1.0 - dRx) * fQx_1 + (float)dRx * fQx_2;
+            fQx_1 = (1.0 - fRx) * fQx_1 + fRx * fQx_2;
         }
 
         fOutput[u16Counter] = fQx_1;
