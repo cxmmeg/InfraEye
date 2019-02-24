@@ -123,6 +123,46 @@ void LCD_Convert(float *frameTemperature, uint16_t *frameColor, uint16_t frameSi
   }
 }
 
+void LCD_Convert_u16(uint16_t *frameTemperature, uint16_t *frameColor, uint16_t frameSize,
+  float minTemperature, float maxTemperature, uint8_t subPage)
+{
+  uint16_t i;
+  //uint16_t constDegToScale;
+  float constDegToScale;
+  uint16_t colorIndex;
+  uint16_t colorScaleSize = 403;
+
+//  if(minTemperature>15) minTemperature = 15;
+//  if(maxTemperature<50) maxTemperature = 50;
+  
+  constDegToScale = (maxTemperature - minTemperature) / ((float)colorScaleSize - (float)1);
+//  Serial.printf("constDegToScale=%d maxTemperature=%d minTemperature=%d colorScaleSize=%d\n", (int)constDegToScale, maxTemperature, minTemperature, colorScaleSize);
+
+  for(i = 0; i < frameSize; i++)
+  {
+    //if(((i/OUTPUT_ARRAY_LENGTH_D) % 2) == subPage)
+    {
+      if(frameTemperature[i] < minTemperature)
+      {
+        colorIndex = 0;
+      }else if(frameTemperature[i] > maxTemperature)
+      {
+        colorIndex = colorScaleSize - 1;
+      }else
+      {
+        colorIndex = (uint16_t)(((float)frameTemperature[i] - (float)minTemperature) / constDegToScale);
+      }      
+      //Serial.printf("%.4x", (int)frameTemperature[i]);
+      //if((i%32)==0)
+      //{
+      //  Serial.printf("\n");
+      //  wdt_reset();
+      //}
+      frameColor[i] = colorPalete[colorIndex];
+    }
+  }
+}
+
 void LCD_FillRect(uint16_t x, uint16_t y, uint16_t width, uint16_t height, uint16_t color)
 {
 	tft.fillRect(x, y, width, height, color);
