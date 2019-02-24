@@ -128,7 +128,7 @@ void IRsensor_LoadSubPage(float* mlx90640To)
   // -------------- Calculate temperature of subframe --------
   tr = MLX90640_GetTa(mlx90640Frame, &mlx90640) - TA_SHIFT; //reflected temperature based on the sensor
   dtostrf((double)tr, 4, 2, str_temp);
-  Serial.printf("Ambient temperature: %s°C (%d)\n", str_temp, (int)tr);
+  Serial.printf("Ambient temperature: %sï¿½C (%d)\n", str_temp, (int)tr);
   wdt_reset();
   MLX90640_CalculateTo_Custom(mlx90640Frame, &mlx90640, emissivity, tr, mlx90640To);
   //MLX90640_GetImage(mlx90640Frame, &mlx90640, mlx90640To);
@@ -149,7 +149,7 @@ void IRsensor_LoadSubPage_u16(uint16_t* pixelValue)
   // -------------- Calculate temperature of subframe --------
   tr = MLX90640_GetTa(mlx90640Frame, &mlx90640) - TA_SHIFT; //reflected temperature based on the sensor
   dtostrf((double)tr, 4, 2, str_temp);
-  Serial.printf("Ambient temperature: %s°C (%d)\n", str_temp, (int)tr);
+  Serial.printf("Ambient temperature: %sï¿½C (%d)\n", str_temp, (int)tr);
   wdt_reset();
   MLX90640_CalculateTo_Custom_u16(mlx90640Frame, &mlx90640, emissivity, tr, pixelValue);
   //MLX90640_GetImage(mlx90640Frame, &mlx90640, mlx90640To);
@@ -160,8 +160,7 @@ void IRsensor_LoadSubPage_u16(uint16_t* pixelValue)
   #endif 
 }
 
-//void IRsensor_UpdateMinMax(float* min_t, float* max_t, float* pixelValue)
-void IRsensor_UpdateMinMax(float* min_t, float* max_t, uint16_t* pixelValue)
+void IRsensor_UpdateMinMax(float* min_t, float* max_t, float* pixelValue)
 {
 	*min_t = (300+50)*128;
     *max_t = (-40+50)*128;
@@ -169,6 +168,24 @@ void IRsensor_UpdateMinMax(float* min_t, float* max_t, uint16_t* pixelValue)
     {
       if(pixelValue[i] > *max_t) *max_t = pixelValue[i];
       if(pixelValue[i] < *min_t) *min_t = pixelValue[i];    
+    }
+}
+
+void IRsensor_UpdateMinMax_u16(uint16_t* pu16MinTemp, uint16_t* pu16MaxTemp, uint16_t* pu16PixelValue)
+{
+    *pu16MinTemp = (uint16_t)((300 + TEMP_OFFSET_D) * TEMP_SCALE_FACTOR_D);
+    *pu16MaxTemp = (uint16_t)((-40 + TEMP_OFFSET_D) * TEMP_SCALE_FACTOR_D);
+
+    for(uint16_t i = 0; i < 768u; i++)
+    {
+        if(pu16PixelValue[i] > *pu16MaxTemp)
+        {
+          *pu16MaxTemp = pu16PixelValue[i];
+        } 
+        if(pu16PixelValue[i] < *pu16MinTemp) 
+        {
+          *pu16MinTemp = pu16PixelValue[i];    
+        }
     }
 }
 

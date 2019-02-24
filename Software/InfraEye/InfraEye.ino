@@ -21,12 +21,14 @@ void setup()
 void loop(void)
 {
   uint16_t data;
-  static uint16_t afUpscaleBuffer[OUTPUT_BUFFER_SIZE_D]; 
+  static uint16_t au16UpscaleBuffer[OUTPUT_BUFFER_SIZE_D]; 
   int status;
   static uint16_t frameColor[OUTPUT_BUFFER_SIZE_D]; // scaled
   static uint16_t frameColor1[768];                 // not scaled
-  static float min_t = 300;
-  static float max_t = -40;
+
+  static uint16_t u16MinTemp = (uint16_t)((300 + TEMP_OFFSET_D) * TEMP_SCALE_FACTOR_D);
+  static uint16_t u16MaxTemp = (uint16_t)((-40 + TEMP_OFFSET_D) * TEMP_SCALE_FACTOR_D);
+
   static float FPS = 0;
   static unsigned long time_start, time_start2, time_1, time_2, time_3, time_4, time_5, time_end;
   static unsigned long time_Wait, time_GetSubPage, time_UpScale, time_Convert, time_LCDWrite;
@@ -61,9 +63,7 @@ void loop(void)
  
   if((micros()/1000000)%2 == 0)
   {
-    IRsensor_UpdateMinMax(&min_t, &max_t, u16_pixelValue);    
-//    min_t = 3820;
-//    max_t = 10240;
+    IRsensor_UpdateMinMax_u16(&u16MinTemp, &u16MaxTemp, u16_pixelValue);    
   }
   // -------------- Upscale ----------------------------------
   if(subPage==0)
@@ -85,12 +85,12 @@ void loop(void)
     
     // -------------- Upscale temperature image ---------------
     time_start2 = micros();
-    img_up_vUpscaleImage_u16(u16_pixelValue, afUpscaleBuffer, OUTPUT_BUFFER_SIZE_D);
+    img_up_vUpscaleImage_u16(u16_pixelValue, au16UpscaleBuffer, OUTPUT_BUFFER_SIZE_D);
     time_UpScale += micros() - time_start2;
   
     // -------------- Convert temperature to color code -------
     time_start2 = micros();
-    LCD_Convert_u16(afUpscaleBuffer, frameColor, OUTPUT_BUFFER_SIZE_D, min_t, max_t, subPage);
+    LCD_Convert_u16(au16UpscaleBuffer, frameColor, OUTPUT_BUFFER_SIZE_D, u16MinTemp, u16MaxTemp, subPage);
     time_Convert += micros() - time_start2;
 
     time_start2 = micros();
@@ -122,7 +122,7 @@ void loop(void)
   LCD_drawImage(frameColor1, 32, 24, 120, 0, 4, 0);
 #endif
 
-  if((micros()/1000000)%2 == 0) LCD_PrintStats(0, 190, max_t, min_t, FPS);
+  if((micros()/1000000)%2 == 0) LCD_PrintStats(0, 190, (float)((u16MaxTemp >> 7u) - TEMP_OFFSET_D), (float)((u16MinTemp >> 7u) - TEMP_OFFSET_D), FPS);
   time_5 = micros();
 }
 

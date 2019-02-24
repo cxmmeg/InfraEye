@@ -95,7 +95,7 @@ void LCD_Convert(float *frameTemperature, uint16_t *frameColor, uint16_t frameSi
 //  if(minTemperature>15) minTemperature = 15;
 //  if(maxTemperature<50) maxTemperature = 50;
   
-  constDegToScale = ((float)maxTemperature - (float)minTemperature) / ((float)colorScaleSize - (float)1);
+  constDegToScale = (maxTemperature - minTemperature) / ((float)colorScaleSize - (float)1);
 //  Serial.printf("constDegToScale=%d maxTemperature=%d minTemperature=%d colorScaleSize=%d\n", (int)constDegToScale, maxTemperature, minTemperature, colorScaleSize);
 
   for(i = 0; i < frameSize; i++)
@@ -124,7 +124,7 @@ void LCD_Convert(float *frameTemperature, uint16_t *frameColor, uint16_t frameSi
 }
 
 void LCD_Convert_u16(uint16_t *frameTemperature, uint16_t *frameColor, uint16_t frameSize,
-  float minTemperature, float maxTemperature, uint8_t subPage)
+  uint16_t minTemperature, uint16_t maxTemperature, uint8_t subPage)
 {
   uint16_t i;
   //uint16_t constDegToScale;
@@ -135,7 +135,7 @@ void LCD_Convert_u16(uint16_t *frameTemperature, uint16_t *frameColor, uint16_t 
 //  if(minTemperature>15) minTemperature = 15;
 //  if(maxTemperature<50) maxTemperature = 50;
   
-  constDegToScale = (maxTemperature - minTemperature) / ((float)colorScaleSize - (float)1);
+  constDegToScale = ((float)maxTemperature - (float)minTemperature) / ((float)colorScaleSize - (float)1);
 //  Serial.printf("constDegToScale=%d maxTemperature=%d minTemperature=%d colorScaleSize=%d\n", (int)constDegToScale, maxTemperature, minTemperature, colorScaleSize);
 
   for(i = 0; i < frameSize; i++)
