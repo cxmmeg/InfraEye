@@ -19,6 +19,8 @@ enum RefreshRate
 	RR64Hz
 };
 
+#define REFRESH_RATE	RR2Hz
+
 // LCD
 //#define STMPE_CS 16 // Not used yet
 #define TFT_CS   0
@@ -27,6 +29,3 @@ enum RefreshRate
 #define RAW_IMAGE
 
 //
-
-
-

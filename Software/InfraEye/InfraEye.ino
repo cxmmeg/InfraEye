@@ -5,8 +5,9 @@
 
 #ifdef LIVE_DATA
   static float pixelValue[768];
-  static uint16_t u16_pixelValue[768];
+  
   #endif
+static uint16_t u16_pixelValue[768];
 
 void setup()
 {
@@ -53,7 +54,7 @@ void loop(void)
     //Serial.printf("Error while reading status register. Error code:%d\n", error);      
   }    
   time_Wait = micros() - time_start;
-  
+
   // -------------- Read subframe ----------------------------
   //IRsensor_LoadSubPage(pixelValue);
   IRsensor_LoadSubPage_u16(u16_pixelValue);

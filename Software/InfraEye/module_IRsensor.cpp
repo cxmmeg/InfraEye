@@ -153,6 +153,13 @@ void IRsensor_LoadSubPage_u16(uint16_t* pixelValue)
   wdt_reset();
   MLX90640_CalculateTo_Custom_u16(mlx90640Frame, &mlx90640, emissivity, tr, pixelValue);
   //MLX90640_GetImage(mlx90640Frame, &mlx90640, mlx90640To);
+  #else
+  for(uint16_t i = 0; i < 768; i++)
+  {
+    pixelValue[i] = (uint16_t)((mlx90640To[i] + (float)TEMP_OFFSET_D) * (float)TEMP_SCALE_FACTOR_D);
+    //Serial.printf("%d %d|", pixelValue[i], i);
+    //if((i%32)==31) Serial.printf("\n");
+  }
   #endif
 
    #ifdef TEMPERATURE2CONSOLE
@@ -197,4 +204,3 @@ uint8_t IRsensor_CurrentSubPage(void)
 	subPage = registerValue & 0x0001;
 	return(subPage);
 }
-
