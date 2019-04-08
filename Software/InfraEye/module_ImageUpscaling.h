@@ -10,6 +10,8 @@
 // Output buffer size shall be multiple of OUTPUT_ARRAY_WIDTH_D
 #define OUTPUT_BUFFER_SIZE_D    (8 * OUTPUT_ARRAY_LENGTH_D)
 
+#define LOOK_UP_TABLE_D (1u)
+
 
 typedef enum
 {

@@ -8,7 +8,7 @@
 /*********************************************************************************************************/
 /* DEFINES                                                                                               */
 /*********************************************************************************************************/
-#define LOOK_UP_TABLE_D (0u)
+
 
 
 /*********************************************************************************************************/
@@ -22,13 +22,13 @@ static FACTOR_T img_up_aeRxCol[SCALING_FACTOR_D] = {FACTOR_0_E, FACTOR_0_25_E, F
 static FACTOR_T img_up_aeRxRow[SCALING_FACTOR_D] = {FACTOR_0_E, FACTOR_0_25_E, FACTOR_0_5_E, FACTOR_0_75_E};
 
 #if LOOK_UP_TABLE_D
-static uint16_t img_up_au16LowIndexA_C[OUTPUT_ARRAY_LENGTH_D] = 
+static volatile uint16_t img_up_au16LowIndexA_C[OUTPUT_ARRAY_LENGTH_D] = 
 {
     1u,1u,1u,1u,        2u,2u,2u,2u,        3u,3u,3u,3u,        4u,4u,4u,4u,        5u,5u,5u,5u,        6u,6u,6u,6u,        7u,7u,7u,7u,        8u,8u,8u,8u,
     9u,9u,9u,9u,        10u,10u,10u,10u,    11u,11u,11u,11u,    12u,12u,12u,12u,    13u,13u,13u,13u,    14u,14u,14u,14u,    15u,15u,15u,15u,    16u,16u,16u,16u,
     17u,17u,17u,17u,    18u,18u,18u,18u,    19u,19u,19u,19u,    20u,20u,20u,20u,    21u,21u,21u,21u,    22u,22u,22u,22u,    23u,23u,23u,23u 
 };
-static uint16_t img_up_au16LowIndexB_C[OUTPUT_ARRAY_WIDTH_D] = 
+static volatile uint16_t img_up_au16LowIndexB_C[OUTPUT_ARRAY_WIDTH_D] = 
 {
     1u,1u,1u,1u,        2u,2u,2u,2u,        3u,3u,3u,3u,        4u,4u,4u,4u,        5u,5u,5u,5u,        6u,6u,6u,6u,        7u,7u,7u,7u,        8u,8u,8u,8u,
     9u,9u,9u,9u,        10u,10u,10u,10u,    11u,11u,11u,11u,    12u,12u,12u,12u,    13u,13u,13u,13u,    14u,14u,14u,14u,    15u,15u,15u,15u,    16u,16u,16u,16u,
