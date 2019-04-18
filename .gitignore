@@ -8,3 +8,9 @@ Modelling/C_Code_Generation_Test_1/codegen/
 Modelling/CodeBlocks_Project/bin/Release/ImageUpscaling.exe
 Modelling/CodeBlocks_Project/bin/
 Modelling/out.txt
+Software/InfraEye/build/
+Software/InfraEye/sdkconfig.old
+Software/InfraEye/sdkconfig.defaults
+Software/InfraEye/.settings/
+Software/InfraEye/.project
+Software/InfraEye/.cproject
