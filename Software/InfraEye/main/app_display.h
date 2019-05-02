@@ -42,7 +42,7 @@
 
 //To speed up transfers, every SPI transfer sends a bunch of lines. This define specifies how many. More means more memory use,
 //but less overhead for setting up / finishing transfers. Make sure 240 is dividable by this.
-#define PARALLEL_LINES 16
+#define app_disp_PARALLEL_LINES_D 	(16)
 
 //Define the height and width of the jpeg file. Make sure this matches the actual jpeg
 //dimensions.
@@ -120,17 +120,19 @@ esp_err_t pretty_effect_init();
  */
 esp_err_t decode_image(uint16_t ***pixels);
 
-void lcd_cmd(spi_device_handle_t spi, const uint8_t cmd);
+void app_disp_vInitialize(void);
 
-void lcd_data(spi_device_handle_t spi, const uint8_t *data, int len);
+void app_disp_vLCD_Cmd(spi_device_handle_t psSPI_Device, const uint8_t u8Cmd);
 
-void lcd_spi_pre_transfer_callback(spi_transaction_t *t);
+void app_disp_vLCD_SendData(spi_device_handle_t psSPI_Device, const uint8_t *pu8Data, int intLength);
 
-uint32_t lcd_get_id(spi_device_handle_t spi);
+void app_disp_vLCD_SPI_PreTransferCallback(spi_transaction_t *psTransaction);
 
-void lcd_init(spi_device_handle_t spi);
+uint32_t app_disp_u32LCD_GetID(spi_device_handle_t psSPI_Device);
 
-void display_pretty_colors(spi_device_handle_t spi);
+void app_disp_vLCD_Init(spi_device_handle_t psSPI_Device);
+
+void display_pretty_colors(void);
 
 
 #endif /* APP_DISPLAY_H_ */
