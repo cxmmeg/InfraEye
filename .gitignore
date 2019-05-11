@@ -14,3 +14,4 @@ Software/InfraEye/sdkconfig.defaults
 Software/InfraEye/.settings/
 Software/InfraEye/.project
 Software/InfraEye/.cproject
+/Software/InfraEye/sdkconfig
