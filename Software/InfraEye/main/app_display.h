@@ -15,6 +15,7 @@
 
 #include <stdint.h>
 #include "esp_err.h"
+#include "driver/spi_master.h"
 
 /************************************************************************************/
 /* DEFINES																			*/
@@ -42,7 +43,7 @@
 
 //To speed up transfers, every SPI transfer sends a bunch of lines. This define specifies how many. More means more memory use,
 //but less overhead for setting up / finishing transfers. Make sure 240 is dividable by this.
-#define app_disp_PARALLEL_LINES_D 	(16)
+#define app_disp_PARALLEL_LINES_D 	(48)
 
 //Define the height and width of the jpeg file. Make sure this matches the actual jpeg
 //dimensions.
@@ -51,6 +52,17 @@
 
 //Size of the work space for the jpeg decoder.
 #define WORKSZ 3100
+
+#define DISP_ROWS_D					(320)
+#define DISP_COLUMNS_D				(240)
+
+#define COLOUR_WHITE_D				(0xFFFF)
+#define COLOUR_BLACK_D				(0x0000)
+#define COLOUR_RED_D				(0xF800)
+#define COLOUR_GREEN_D				(0x07E0)
+#define COLOUR_BLUE_D				(0x001F)
+
+
 
 /************************************************************************************/
 /* TYPEDEFS																			*/
@@ -86,6 +98,24 @@ typedef struct
 }
 JpegDev;
 
+typedef enum
+{
+	colour_White_e 	= 0xFFFF,
+	colour_Red_e	= 0xF800,
+	colour_Green_e	= 0x07E0,
+	colour_Blue_e	= 0x001F,
+	colour_Black_e	= 0x0000
+}
+COLOURS_T;
+
+typedef struct
+{
+	uint16_t	*pu16DispPixels;
+	uint16_t 	u16Status;
+}
+DISP_HANDLE_T;
+
+
 /************************************************************************************/
 /* FUNCTION PROTOTYPES																*/
 /************************************************************************************/
@@ -98,7 +128,7 @@ JpegDev;
  * @param frame Current frame, used for animation
  * @param linect Amount of lines to calculate
  */
-void pretty_effect_calc_lines(uint16_t *dest, int line, int frame, int linect);
+//void pretty_effect_calc_lines(uint16_t *dest, int line, int frame, int linect);
 
 
 /**
@@ -106,7 +136,7 @@ void pretty_effect_calc_lines(uint16_t *dest, int line, int frame, int linect);
  *
  * @return ESP_OK on success, an error from the jpeg decoder otherwise.
  */
-esp_err_t pretty_effect_init();
+//esp_err_t pretty_effect_init();
 
 
 /**
@@ -122,17 +152,17 @@ esp_err_t decode_image(uint16_t ***pixels);
 
 void app_disp_vInitialize(void);
 
-void app_disp_vLCD_Cmd(spi_device_handle_t psSPI_Device, const uint8_t u8Cmd);
-
-void app_disp_vLCD_SendData(spi_device_handle_t psSPI_Device, const uint8_t *pu8Data, int intLength);
+uint32_t app_disp_u32LCD_GetID(void);
 
 void app_disp_vLCD_SPI_PreTransferCallback(spi_transaction_t *psTransaction);
 
-uint32_t app_disp_u32LCD_GetID(spi_device_handle_t psSPI_Device);
+void app_disp_vRunDisplayTask(void);
 
-void app_disp_vLCD_Init(spi_device_handle_t psSPI_Device);
+void app_disp_vSetRectangleColour(uint16_t u16ColPos, uint16_t u16RowPos, uint16_t u16ColLength, uint16_t u16RowLength, uint16_t u16Colour);
 
-void display_pretty_colors(void);
+void app_disp_vGetFreeHandle(DISP_HANDLE_T* psHandle);
+
+//void display_pretty_colors(void);
 
 
 #endif /* APP_DISPLAY_H_ */
