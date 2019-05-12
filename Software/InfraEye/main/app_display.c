@@ -34,7 +34,7 @@
 /* MODULE VARIABLES																	*/
 /************************************************************************************/
 
-DRAM_ATTR static const lcd_init_cmd_t app_disp_ILI_InitCmds[] =
+DRAM_ATTR static const lcd_init_cmd_t app_disp_sILI_InitCmds[] =
 {
     /* Power contorl B, power control = 0, DC_ENA = 1 */
     {0xCF, {0x00, 0x83, 0X30}, 3},
@@ -95,11 +95,13 @@ DRAM_ATTR static const lcd_init_cmd_t app_disp_ILI_InitCmds[] =
     {0, {0}, 0xff},
 };
 
+#if 0
 //Reference the binary-included jpeg file
 extern const uint8_t image_jpg_start[]   asm("_binary_image_jpg_start");
 extern const uint8_t image_jpg_end[]     asm("_binary_image_jpg_end");
 
 const char *TAG="ImageDec";
+#endif
 
 static spi_device_handle_t app_disp_psSPI_Device;
 
@@ -115,20 +117,25 @@ static spi_bus_config_t app_disp_sBusCfg =
 
 static spi_device_interface_config_t app_disp_sDevCfg =
 {
-#ifdef CONFIG_LCD_OVERCLOCK
+
 	.clock_speed_hz = 26*1000*1000,           //Clock out at 26 MHz
-#else
-	.clock_speed_hz = 10*1000*1000,           //Clock out at 10 MHz
-#endif
 	.mode = 0,                                //SPI mode 0
 	.spics_io_num = PIN_NUM_CS,               //CS pin
 	.queue_size = 7,                          //We want to be able to queue 7 transactions at a time
 	.pre_cb = app_disp_vLCD_SPI_PreTransferCallback,  //Specify pre-transfer callback to handle D/C line
 };
 
+static uint16_t* app_disp_pu16DispPixels;
+
 /************************************************************************************/
 /* FUNCTION PROTOTYPES																*/
 /************************************************************************************/
+
+static void app_disp_vLCD_Init(spi_device_handle_t psSPI_Device);
+
+static void app_disp_vLCD_Cmd(spi_device_handle_t psSPI_Device, const uint8_t u8Cmd);
+
+static void app_disp_vLCD_SendData(spi_device_handle_t psSPI_Device, const uint8_t *pu8Data, int intLength);
 
 static void app_disp_vSendLines(spi_device_handle_t psSPI_Device, int intPosY, uint16_t *pu16LineData);
 
@@ -154,9 +161,8 @@ void app_disp_vInitialize(void)
 	/* Initialize the LCD */
 	app_disp_vLCD_Init(app_disp_psSPI_Device);
 
-	/* Initialize the effect displayed */
-	i32Return = pretty_effect_init();
-	ESP_ERROR_CHECK(i32Return);
+	app_disp_pu16DispPixels = heap_caps_malloc(DISP_COLUMNS_D*DISP_ROWS_D*sizeof(uint16_t), MALLOC_CAP_DMA);
+    assert(app_disp_pu16DispPixels != NULL);
 
 }
 
@@ -168,7 +174,7 @@ void app_disp_vInitialize(void)
  * mode for higher speed. The overhead of interrupt transactions is more than
  * just waiting for the transaction to complete.
  */
-void app_disp_vLCD_Cmd(spi_device_handle_t psSPI_Device, const uint8_t u8Cmd)
+static void app_disp_vLCD_Cmd(spi_device_handle_t psSPI_Device, const uint8_t u8Cmd)
 {
     esp_err_t i32Return;
     spi_transaction_t sTransaction;
@@ -188,7 +194,7 @@ void app_disp_vLCD_Cmd(spi_device_handle_t psSPI_Device, const uint8_t u8Cmd)
  * mode for higher speed. The overhead of interrupt transactions is more than
  * just waiting for the transaction to complete.
  */
-void app_disp_vLCD_SendData(spi_device_handle_t psSPI_Device, const uint8_t *pu8Data, int intLength)
+static void app_disp_vLCD_SendData(spi_device_handle_t psSPI_Device, const uint8_t *pu8Data, int intLength)
 {
     esp_err_t i32Return;
     spi_transaction_t sTransaction;
@@ -217,10 +223,10 @@ void app_disp_vLCD_SPI_PreTransferCallback(spi_transaction_t *psTransaction)
     gpio_set_level(PIN_NUM_DC, intDC);
 }
 
-uint32_t app_disp_u32LCD_GetID(spi_device_handle_t psSPI_Device)
+uint32_t app_disp_u32LCD_GetID(void)
 {
     // get_id command
-    app_disp_vLCD_Cmd(psSPI_Device, 0x04);
+    app_disp_vLCD_Cmd(app_disp_psSPI_Device, 0x04);
 
     spi_transaction_t sTransaction;
     memset(&sTransaction, 0, sizeof(sTransaction));
@@ -228,14 +234,14 @@ uint32_t app_disp_u32LCD_GetID(spi_device_handle_t psSPI_Device)
     sTransaction.flags = SPI_TRANS_USE_RXDATA;
     sTransaction .user = (void*)1;
 
-    esp_err_t ret = spi_device_polling_transmit(psSPI_Device, &sTransaction);
+    esp_err_t ret = spi_device_polling_transmit(app_disp_psSPI_Device, &sTransaction);
     assert( ret == ESP_OK );
 
     return *(uint32_t*)sTransaction.rx_data;
 }
 
 //Initialize the display
-void app_disp_vLCD_Init(spi_device_handle_t psSPI_Device)
+static void app_disp_vLCD_Init(spi_device_handle_t psSPI_Device)
 {
     int intCmd = 0;
     const lcd_init_cmd_t* psLCD_InitCmds;
@@ -251,7 +257,7 @@ void app_disp_vLCD_Init(spi_device_handle_t psSPI_Device)
     gpio_set_level(PIN_NUM_RST, 1);
     vTaskDelay(100 / portTICK_RATE_MS);
 
-    psLCD_InitCmds = &app_disp_ILI_InitCmds;
+    psLCD_InitCmds = app_disp_sILI_InitCmds;
 
     //Send all the commands
     while (psLCD_InitCmds[intCmd].databytes != 0xFF)
@@ -350,6 +356,53 @@ static void app_disp_vSendLineFinish(spi_device_handle_t psSPI_Device)
     }
 }
 
+
+void app_disp_vRunDisplayTask(void)
+{
+
+	static uint16_t u16DispColumnsCounter = 0u;
+	static uint8_t u8FirstTime = 1u;
+	uint16_t* pu16Pixels;
+
+	if(u8FirstTime == 0u)
+	{
+		/* Wait for finishing previous transaction */
+		app_disp_vSendLineFinish(app_disp_psSPI_Device);
+	}
+	else
+	{
+		/* Do nothing for the first time */
+		u8FirstTime = 0u;
+	}
+
+	if(u16DispColumnsCounter == DISP_COLUMNS_D)
+	{
+		u16DispColumnsCounter = 0u;
+	}
+
+	pu16Pixels = app_disp_pu16DispPixels + (u16DispColumnsCounter*DISP_ROWS_D);
+
+	/* Display section */
+	app_disp_vSendLines(app_disp_psSPI_Device, u16DispColumnsCounter, pu16Pixels);
+	/* Increment column counter */
+	u16DispColumnsCounter += app_disp_PARALLEL_LINES_D;
+
+}
+
+void app_disp_vSetRectangleColour(uint16_t u16ColPos, uint16_t u16RowPos, uint16_t u16ColLength, uint16_t u16RowLength, uint16_t u16Colour)
+{
+	uint16_t u16Iterator;
+	uint16_t* pu16Pixels;
+
+	for(u16Iterator = u16ColPos; u16Iterator < (u16ColPos + u16ColLength); u16Iterator++)
+	{
+		pu16Pixels = app_disp_pu16DispPixels + ((u16Iterator * DISP_ROWS_D) + u16RowPos);
+		memset(pu16Pixels, (int)u16Colour, sizeof(uint16_t)*u16RowLength);
+	}
+
+}
+
+#if 0
 
 //Simple routine to generate some patterns and send them to the LCD. Don't expect anything too
 //impressive. Because the SPI driver handles transactions in the background, we can calculate the next line
@@ -544,4 +597,4 @@ err:
     return ret;
 }
 
-
+#endif

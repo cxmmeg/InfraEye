@@ -14,7 +14,6 @@
 #include <stdio.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "driver/spi_master.h"
 #include "soc/gpio_struct.h"
 #include "driver/gpio.h"
 #include "sdkconfig.h"
@@ -37,36 +36,92 @@
 /************************************************************************************/
 /* FUNCTION DEFINITIONS																*/
 /************************************************************************************/
+
+void vTask1( void *pvParameters )
+{
+	TickType_t xLastWakeTime;
+	const TickType_t xFrequency = 1000;
+
+	xLastWakeTime = xTaskGetTickCount();
+	for(;;)
+	{
+		vTaskDelayUntil( &xLastWakeTime, xFrequency );
+		ets_printf("Task1\n");
+	}
+	vTaskDelete(NULL);
+}
+
+void vTask2( void *pvParameters )
+{
+	TickType_t xLastWakeTime;
+	const TickType_t xFrequency = 100;
+	uint16_t u16RectPosCol = 0u;
+	uint16_t u16RectPosRow = 0u;
+	uint16_t u16LastRectPosCol = 216u;
+	uint16_t u16LastRectPosRow = 288u;
+
+	app_disp_vSetRectangleColour(0u,0u,240u,320u,(uint16_t)colour_Red_e);
+	xLastWakeTime = xTaskGetTickCount();
+	for(;;)
+	{
+		vTaskDelayUntil( &xLastWakeTime, xFrequency );
+		ets_printf("Task2\n");
+    	/* Set last position to blue colour */
+        app_disp_vSetRectangleColour(u16LastRectPosCol,u16LastRectPosRow,24u,32u,(uint16_t)colour_Blue_e);
+        /* Set new rectangle position */
+        app_disp_vSetRectangleColour(u16RectPosCol,u16RectPosRow,24u,32u,(uint16_t)colour_White_e);
+
+        u16LastRectPosCol = u16RectPosCol;
+        u16LastRectPosRow = u16RectPosRow;
+
+        /* Move rectangle */
+    	if((u16RectPosRow + 32u) < 320u)
+    	{
+    		u16RectPosRow += 16u ;
+    	}
+    	else
+    	{
+    		u16RectPosRow = 0u;
+
+    		if((u16RectPosCol + 24u) < 240u)
+    		{
+    			u16RectPosCol += 12u;
+    		}
+    		else
+    		{
+    			u16RectPosCol = 0u;
+    		}
+    	}
+	}
+	vTaskDelete(NULL);
+}
+
 void app_main()
 {
-    /* Configure the IOMUX register for pad BLINK_GPIO (some pads are
-       muxed to GPIO on reset already, but some default to other
-       functions and need to be switched to GPIO. Consult the
-       Technical Reference for a list of pads and their default
-       functions.)
-    */
+    uint32_t u32TimeStamp = 0uL;
 
-    gpio_pad_select_gpio(BLINK_GPIO);
-    /* Set the GPIO as a push/pull output */
-    gpio_set_direction(BLINK_GPIO, GPIO_MODE_OUTPUT);
+	TaskHandle_t xHandleTask1 = NULL;
+	TaskHandle_t xHandleTask2 = NULL;
 
     app_disp_vInitialize();
 
-	//Go do nice stuff.
-	display_pretty_colors();
+	xTaskCreate(vTask1, "Task1",
+	                    1500,      /* Stack size in words, not bytes. */
+	                    ( void * ) 1,    /* Parameter passed into the task. */
+	                    1,
+	                    &xHandleTask1 );      /* Used to pass out the created task's handle. */
 
-#if 0
+	xTaskCreate(vTask2, "Task2",
+	                    1500,      /* Stack size in words, not bytes. */
+	                    ( void * ) 1,    /* Parameter passed into the task. */
+	                    2,
+	                    &xHandleTask2 );      /* Used to pass out the created task's handle. */
+
     while(1)
     {
-        /* Blink off (output low) */
-    	printf("Turning off the LED\n");
-        gpio_set_level(BLINK_GPIO, 0);
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
+        u32TimeStamp = (uint32_t)xTaskGetTickCount();
 
-        /* Blink on (output high) */
-        printf("Turning on the LED\n");
-        gpio_set_level(BLINK_GPIO, 1);
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
+        /* Run display task */
+    	app_disp_vRunDisplayTask();
     }
-#endif
 }
