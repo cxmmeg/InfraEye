@@ -29,6 +29,9 @@
 */
 #define BLINK_GPIO 2
 
+uint32_t u32FrameRate = 0uL;	// Number or Idle task executions in 1 second
+uint32_t u32FrameRateOld = 0uL;	// Number or Idle task executions in 1 second
+
 /************************************************************************************/
 /* FUNCTION PROTOTYPES																*/
 /************************************************************************************/
@@ -46,7 +49,7 @@ void vTask1( void *pvParameters )
 	for(;;)
 	{
 		vTaskDelayUntil( &xLastWakeTime, xFrequency );
-		ets_printf("Task1\n");
+		ets_printf("FPS:%d\n", u32FrameRateOld);
 	}
 	vTaskDelete(NULL);
 }
@@ -54,7 +57,7 @@ void vTask1( void *pvParameters )
 void vTask2( void *pvParameters )
 {
 	TickType_t xLastWakeTime;
-	const TickType_t xFrequency = 100;
+	const TickType_t xFrequency = 14;
 	uint16_t u16RectPosCol = 0u;
 	uint16_t u16RectPosRow = 0u;
 	uint16_t u16LastRectPosCol = 216u;
@@ -65,7 +68,7 @@ void vTask2( void *pvParameters )
 	for(;;)
 	{
 		vTaskDelayUntil( &xLastWakeTime, xFrequency );
-		ets_printf("Task2\n");
+		//ets_printf("Task2\n");
     	/* Set last position to blue colour */
         app_disp_vSetRectangleColour(u16LastRectPosCol,u16LastRectPosRow,24u,32u,(uint16_t)colour_Blue_e);
         /* Set new rectangle position */
@@ -77,7 +80,7 @@ void vTask2( void *pvParameters )
         /* Move rectangle */
     	if((u16RectPosRow + 32u) < 320u)
     	{
-    		u16RectPosRow += 16u ;
+    		u16RectPosRow += 1u ;
     	}
     	else
     	{
@@ -85,7 +88,7 @@ void vTask2( void *pvParameters )
 
     		if((u16RectPosCol + 24u) < 240u)
     		{
-    			u16RectPosCol += 12u;
+    			u16RectPosCol += 6u;
     		}
     		else
     		{
@@ -98,7 +101,8 @@ void vTask2( void *pvParameters )
 
 void app_main()
 {
-    uint32_t u32TimeStamp = 0uL;
+	uint32_t u32TimeIdleStart = 0uL;
+	uint32_t u32TimeIdleEnd = 0uL;
 
 	TaskHandle_t xHandleTask1 = NULL;
 	TaskHandle_t xHandleTask2 = NULL;
@@ -116,12 +120,19 @@ void app_main()
 	                    ( void * ) 1,    /* Parameter passed into the task. */
 	                    2,
 	                    &xHandleTask2 );      /* Used to pass out the created task's handle. */
-
+	u32TimeIdleStart = (uint32_t)xTaskGetTickCount();
     while(1)
     {
-        u32TimeStamp = (uint32_t)xTaskGetTickCount();
-
-        /* Run display task */
-    	app_disp_vRunDisplayTask();
+      	app_disp_vRunDisplayTask();
+    	u32TimeIdleEnd = (uint32_t)xTaskGetTickCount();
+    	if((u32TimeIdleEnd - u32TimeIdleStart) > 1000)
+    	{
+    		u32TimeIdleStart = (uint32_t)xTaskGetTickCount();
+    		u32FrameRateOld = u32FrameRate;
+    		u32FrameRate = 0;
+    	}else
+    	{
+    		u32FrameRate++;
+    	}
     }
 }
