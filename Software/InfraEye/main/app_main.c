@@ -11,11 +11,13 @@
 /* INCLUDES																			*/
 /************************************************************************************/
 
+#include "module_IRsensor.h"
 #include <stdio.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "soc/gpio_struct.h"
 #include "driver/gpio.h"
+#include "driver/i2c.h"
 #include "sdkconfig.h"
 
 #include "app_display.h"
@@ -108,6 +110,7 @@ void app_main()
 	TaskHandle_t xHandleTask2 = NULL;
 
     app_disp_vInitialize();
+    IRsensor_Init();
 
 	xTaskCreate(vTask1, "Task1",
 	                    1500,      /* Stack size in words, not bytes. */
