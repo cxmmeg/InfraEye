@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include "driver/i2c.h"
 /**
  * @copyright (C) 2017 Melexis N.V.
  *
@@ -21,9 +22,11 @@
 #define ACK_CHECK_EN 0x1                        /*!< I2C master will check ack from slave*/
 #define ACK_CHECK_DIS 0x0                       /*!< I2C master will not check ack from slave */
 
-#include <stdint.h>
+#define _I2C_NUMBER(num) I2C_NUM_##num
+#define I2C_NUMBER(num) _I2C_NUMBER(num)
+#define I2C_MASTER_NUM I2C_NUMBER(0) /*!< I2C port number for master dev */
 
-    void MLX90640_I2CInit(void);
+    i2c_cmd_handle_t MLX90640_I2CInit(void);
     int MLX90640_I2CRead(uint8_t slaveAddr,uint16_t startAddress, uint16_t nMemAddressRead, uint16_t *data);
     int MLX90640_I2CWrite(uint8_t slaveAddr,uint16_t writeAddress, uint16_t data);
     void MLX90640_I2CFreqSet(int freq);

@@ -43,17 +43,18 @@ float mlx90640To[768] = {
 32.088753, 30.563900, 28.151869, 27.495949, 31.573385, 30.869184, 26.378063, 22.739149, 25.992474, 25.923962, 25.064892, 25.197500, 29.335503, 29.400650, 27.571798, 26.694941, 30.337997, 29.997389, 28.669714, 27.251089, 31.289461, 32.086872, 30.189955, 28.874784, 28.749487, 28.855423, 25.507624, 24.638683, 28.104958, 28.932964, 24.717104, 23.813780};
 #endif
 
-uint8_t I2C_scan(void);
+uint8_t I2C_scan(i2c_cmd_handle_t cmd);
 
-void IRsensor_Init(void)
+uint8_t IRsensor_Init(void)
 {
 	int result = -55;
 	uint8_t address;
-	int status; 
+	int status;
+	i2c_cmd_handle_t cmd;
 
-	MLX90640_I2CInit();
+	cmd = MLX90640_I2CInit();
   // Scan I2C to make sure IR sensor is present
-  //address = I2C_scan();
+  address = I2C_scan(cmd);
   /*
   // Initialize IR sensor
   MLX90640_SetResolution(MLX90640_ADR, 0x03);
@@ -64,24 +65,31 @@ void IRsensor_Init(void)
   MLX90640_SetInterleavedMode(MLX90640_ADR);  
   status = MLX90640_DumpEE (MLX90640_ADR, eeMLX90640);
   status = MLX90640_ExtractParameters(eeMLX90640, &mlx90640);*/
+  return(address);
 }
 
-uint8_t I2C_scan(void)
+uint8_t I2C_scan(i2c_cmd_handle_t cmd)
 {
 	uint8_t detectedAddress = 0xFF;
 	uint8_t address;
 	esp_err_t error;
 	int nDevices;
- 
-//  Serial.println("Scanning...");
+	esp_err_t i2c_ret = ESP_OK;
+
+	ets_printf("Scanning...");
  
   nDevices = 0;
   for(address = 1; address < 127; address++ )
   {
-	  error = i2c_master_write_byte(0x20, (address << 1) | I2C_MASTER_READ, ACK_CHECK_EN);
+	  i2c_master_start(cmd);
+	  error = i2c_master_write_byte(cmd, (address << 1) | I2C_MASTER_READ, ACK_CHECK_EN);
+	  i2c_master_stop(cmd);
+	  i2c_ret = i2c_master_cmd_begin(I2C_MASTER_NUM, cmd, (1000 / portTICK_RATE_MS));	//"(# / portTICK_RATE_MS)"=maximum wait time. This task will be blocked until all the commands have been sent (not thread-safe - if you want to use one I2C port in different tasks you need to take care of multi-thread issues)
+	  ets_printf("0x%.2x|%d\t", address, i2c_ret);
 
-    if (error == ESP_OK)
+    if (i2c_ret == ESP_OK)
     {
+    	ets_printf("Found...");
 //      Serial.print("I2C device found at address 0x");
 //      if (address<16)
 //        Serial.print("0");

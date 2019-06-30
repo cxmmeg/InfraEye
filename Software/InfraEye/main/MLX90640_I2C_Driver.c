@@ -5,19 +5,18 @@
 #define WRITE_ADDR	(slaveAddr << 1)
 #define READ_ADDR	((slaveAddr << 1) | 0x01)
 
-#define I2C_MASTER_SCL_IO 19               /*!< gpio number for I2C master clock */
-#define I2C_MASTER_SDA_IO 20               /*!< gpio number for I2C master data  */
+#define I2C_MASTER_SCL_IO 13               /*!< gpio number for I2C master clock */
+#define I2C_MASTER_SDA_IO 12               /*!< gpio number for I2C master data  */
 #define I2C_MASTER_FREQ_HZ 1000000
 
-#define _I2C_NUMBER(num) I2C_NUM_##num
-#define I2C_NUMBER(num) _I2C_NUMBER(num)
+#define I2C_MASTER_RX_BUF_DISABLE 0
+#define I2C_MASTER_TX_BUF_DISABLE 0
 
-#define I2C_MASTER_NUM I2C_NUMBER(0) /*!< I2C port number for master dev */
-
-void MLX90640_I2CInit()
+i2c_cmd_handle_t MLX90640_I2CInit(void)
 { 
 	int i2c_master_port = I2C_MASTER_NUM;
-	/*
+	i2c_cmd_handle_t cmd;
+
 	i2c_config_t conf;
 	conf.mode = I2C_MODE_MASTER;
 	conf.sda_io_num = I2C_MASTER_SDA_IO;
@@ -26,10 +25,11 @@ void MLX90640_I2CInit()
 	conf.scl_pullup_en = GPIO_PULLUP_ENABLE;
 	conf.master.clk_speed = I2C_MASTER_FREQ_HZ;
 	i2c_param_config(i2c_master_port, &conf);
-	return i2c_driver_install(i2c_master_port, conf.mode,
+	i2c_driver_install(i2c_master_port, conf.mode,
 							  I2C_MASTER_RX_BUF_DISABLE,
 							  I2C_MASTER_TX_BUF_DISABLE, 0);
-	Arduino stuff*/
+	cmd = i2c_cmd_link_create();
+	return(cmd);
 }
 
 
