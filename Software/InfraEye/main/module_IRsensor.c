@@ -75,6 +75,8 @@ uint8_t I2C_scan()
 	int nDevices;
 	esp_err_t i2c_ret = ESP_OK;
 	i2c_cmd_handle_t cmd;
+	uint8_t data_h;
+	uint8_t data_l;
 
 	ets_printf("Scanning...");
  
@@ -84,10 +86,12 @@ uint8_t I2C_scan()
 	  cmd = i2c_cmd_link_create();
 	  i2c_master_start(cmd);
 	  error = i2c_master_write_byte(cmd, (address << 1) | I2C_MASTER_READ, ACK_CHECK_EN);
+	  i2c_master_read_byte(cmd, &data_h, 1);
+	  i2c_master_read_byte(cmd, &data_l, 1);
 	  i2c_master_stop(cmd);
 	  i2c_ret = i2c_master_cmd_begin(I2C_MASTER_NUM, cmd, (1000 / portTICK_RATE_MS));	//"(# / portTICK_RATE_MS)"=maximum wait time. This task will be blocked until all the commands have been sent (not thread-safe - if you want to use one I2C port in different tasks you need to take care of multi-thread issues)
 	  i2c_cmd_link_delete(cmd);
-	  ets_printf("0x%.2x|%d\t", address, i2c_ret);
+//	  ets_printf("0x%.2x|0x%x|%x\t", address, i2c_ret, (data_h<<8)+data_l);
 
     if (i2c_ret == ESP_OK)
     {
