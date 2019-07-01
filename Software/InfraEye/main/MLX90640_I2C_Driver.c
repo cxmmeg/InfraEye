@@ -12,7 +12,7 @@
 #define I2C_MASTER_RX_BUF_DISABLE 0
 #define I2C_MASTER_TX_BUF_DISABLE 0
 
-i2c_cmd_handle_t MLX90640_I2CInit(void)
+void MLX90640_I2CInit(void)
 { 
 	int i2c_master_port = I2C_MASTER_NUM;
 	i2c_cmd_handle_t cmd;
@@ -28,8 +28,6 @@ i2c_cmd_handle_t MLX90640_I2CInit(void)
 	i2c_driver_install(i2c_master_port, conf.mode,
 							  I2C_MASTER_RX_BUF_DISABLE,
 							  I2C_MASTER_TX_BUF_DISABLE, 0);
-	cmd = i2c_cmd_link_create();
-	return(cmd);
 }
 
 

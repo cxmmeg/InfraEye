@@ -26,7 +26,7 @@
 #define I2C_NUMBER(num) _I2C_NUMBER(num)
 #define I2C_MASTER_NUM I2C_NUMBER(0) /*!< I2C port number for master dev */
 
-    i2c_cmd_handle_t MLX90640_I2CInit(void);
+    void MLX90640_I2CInit(void);
     int MLX90640_I2CRead(uint8_t slaveAddr,uint16_t startAddress, uint16_t nMemAddressRead, uint16_t *data);
     int MLX90640_I2CWrite(uint8_t slaveAddr,uint16_t writeAddress, uint16_t data);
     void MLX90640_I2CFreqSet(int freq);
