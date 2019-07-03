@@ -33,57 +33,30 @@ void MLX90640_I2CInit(void)
 
 int MLX90640_I2CRead(uint8_t slaveAddr, uint16_t startAddress, uint16_t nMemAddressRead, uint16_t *data)
 {
-	int i = 0;
-	uint8_t error = 0xFF;
-	uint8_t bytes;
-	uint8_t BufferSize;
-	char c = 0;
+	esp_err_t error = -1;
+	i2c_cmd_handle_t cmd;
+	esp_err_t i2c_ret;
     
-//	Serial.println("---I2C Reading---");
-//Serial.printf("S nMemAdd: %d\n", nMemAddressRead);
-while(nMemAddressRead>0)
-{	
-//	Serial.printf("P1 nMemAdd: %d BufferSize: %d\n", nMemAddressRead, BufferSize);
-	if(nMemAddressRead>=16)
-	{
-		nMemAddressRead = nMemAddressRead - 16;
-		BufferSize = 16;
-	}else
-	{
-		BufferSize = nMemAddressRead;
-		nMemAddressRead = 0;
-	}
-//	Serial.printf("P2 nMemAdd: %d BufferSize: %d\n", nMemAddressRead, BufferSize);
-    // Write register address
-	/*
-	Wire.beginTransmission(slaveAddr);	// 7bit I2C address
-	Wire.write(startAddress >> 8);		// MSB of register address
-	Wire.write(startAddress &0x00FF);	// LSB of register address
+	ets_printf("---I2C Reading---");
+	ets_printf("S nMemAdd: %d\n", nMemAddressRead);
 
-	startAddress = startAddress + BufferSize;
-	error = Wire.endTransmission(false);
-	*/
-//	Serial.printf("I2C Write address 0x%.4x Error: %d\n", startAddress, error);	
-	
-    // Read data
-////	bytes = Wire.requestFrom((int)slaveAddr, (int)BufferSize*2);
-//	Serial.printf("I2C Read data 0x");	
-////	while (Wire.available())
-	{ // slave may send less than requested
-////    		char c = Wire.read(); // receive a byte as character
-		if((i&1)==0)
-		{
-        		*(data+(i>>1)) = (uint16_t)(c<<8);
-		}else
-		{
-        		*(data+(i>>1)) = *(data+(i>>1)) + (uint16_t)c;
-		}
-		i++;
-//		Serial.printf("%.2x", c);	
-  	}
-//	Serial.printf(" Bytes received: %d\n", bytes);	
-}	
-//	Serial.println("---I2C Reading End---");
+	// Write register address
+	cmd = i2c_cmd_link_create();
+	i2c_master_start(cmd);
+	error = i2c_master_write_byte(cmd, (slaveAddr << 1) | I2C_MASTER_READ, ACK_CHECK_EN);
+	i2c_master_write_byte(cmd, startAddress >> 8, ACK_CHECK_EN);
+	i2c_master_write_byte(cmd, startAddress &0x00FF, ACK_CHECK_EN);
+	ets_printf("I2C Write address 0x%.4x Error: %d\n", startAddress, error);
+
+	// Read data
+	i2c_master_start(cmd);
+	//ets_printf("I2C Read data 0x");
+	i2c_master_read(cmd, (uint8_t*)data, nMemAddressRead, ACK_CHECK_EN);
+	i2c_master_stop(cmd);
+	i2c_ret = i2c_master_cmd_begin(I2C_MASTER_NUM, cmd, (1000 / portTICK_RATE_MS));	//"(# / portTICK_RATE_MS)"=maximum wait time. This task will be blocked until all the commands have been sent (not thread-safe - if you want to use one I2C port in different tasks you need to take care of multi-thread issues)
+	i2c_cmd_link_delete(cmd);
+
+	ets_printf("---I2C Reading End---");
 	return error;   
 } 
 
