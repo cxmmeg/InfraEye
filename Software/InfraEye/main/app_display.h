@@ -101,9 +101,9 @@ JpegDev;
 typedef enum
 {
 	colour_White_e 	= 0xFFFF,
-	colour_Red_e	= 0xF800,
-	colour_Green_e	= 0x07E0,
-	colour_Blue_e	= 0x001F,
+	colour_Red_e	= 0x03E0,
+	colour_Green_e	= 0x001F,
+	colour_Blue_e	= 0xFC00,
 	colour_Black_e	= 0x0000
 }
 COLOURS_T;

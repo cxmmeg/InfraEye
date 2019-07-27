@@ -391,13 +391,17 @@ void app_disp_vRunDisplayTask(void)
 
 void app_disp_vSetRectangleColour(uint16_t u16ColPos, uint16_t u16RowPos, uint16_t u16ColLength, uint16_t u16RowLength, uint16_t u16Colour)
 {
-	uint16_t u16Iterator;
+	uint16_t u16ColIterator;
+	uint16_t u16RowIterator;
 	uint16_t* pu16Pixels;
 
-	for(u16Iterator = u16ColPos; u16Iterator < (u16ColPos + u16ColLength); u16Iterator++)
+	for(u16ColIterator = u16ColPos; u16ColIterator < (u16ColPos + u16ColLength); u16ColIterator++)
 	{
-		pu16Pixels = app_disp_pu16DispPixels + ((u16Iterator * DISP_ROWS_D) + u16RowPos);
-		memset(pu16Pixels, (int)u16Colour, sizeof(uint16_t)*u16RowLength);
+		for(u16RowIterator = u16RowPos; u16RowIterator < (u16RowPos + u16RowLength); u16RowIterator++)
+		{
+			pu16Pixels = app_disp_pu16DispPixels + ((u16ColIterator * DISP_ROWS_D) + u16RowIterator);
+			*pu16Pixels = u16Colour;
+		}
 	}
 
 }

@@ -66,7 +66,7 @@ void vTask2( void *pvParameters )
 	uint16_t u16LastRectPosCol = 216u;
 	uint16_t u16LastRectPosRow = 288u;
 
-	app_disp_vSetRectangleColour(0u,0u,240u,320u,(uint16_t)colour_Red_e);
+	app_disp_vSetRectangleColour(0u,0u,240u,320u,(uint16_t)colour_Green_e);
 	xLastWakeTime = xTaskGetTickCount();
 	for(;;)
 	{
@@ -75,7 +75,7 @@ void vTask2( void *pvParameters )
     	/* Set last position to blue colour */
         app_disp_vSetRectangleColour(u16LastRectPosCol,u16LastRectPosRow,24u,32u,(uint16_t)colour_Blue_e);
         /* Set new rectangle position */
-        app_disp_vSetRectangleColour(u16RectPosCol,u16RectPosRow,24u,32u,(uint16_t)u16Color);
+        app_disp_vSetRectangleColour(u16RectPosCol,u16RectPosRow,24u,32u,(uint16_t)colour_Red_e);
 
         u16LastRectPosCol = u16RectPosCol;
         u16LastRectPosRow = u16RectPosRow;
@@ -117,7 +117,8 @@ void app_main()
     if(address==0xFF)
     {
     	u16Color = colour_White_e;
-    }else
+    }
+    else
     {
     	u16Color = colour_Red_e;
     }
