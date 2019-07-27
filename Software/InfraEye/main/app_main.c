@@ -75,7 +75,7 @@ void vTask2( void *pvParameters )
     	/* Set last position to blue colour */
         app_disp_vSetRectangleColour(u16LastRectPosCol,u16LastRectPosRow,24u,32u,(uint16_t)colour_Blue_e);
         /* Set new rectangle position */
-        app_disp_vSetRectangleColour(u16RectPosCol,u16RectPosRow,24u,32u,(uint16_t)colour_Red_e);
+        app_disp_vSetRectangleColour(u16RectPosCol,u16RectPosRow,24u,32u,(uint16_t)u16Color);
 
         u16LastRectPosCol = u16RectPosCol;
         u16LastRectPosRow = u16RectPosRow;
@@ -145,7 +145,8 @@ void app_main()
     		u32TimeIdleStart = (uint32_t)xTaskGetTickCount();
     		u32FrameRateOld = u32FrameRate;
     		u32FrameRate = 0;
-    	}else
+    	}
+    	else
     	{
     		u32FrameRate++;
     	}
