@@ -127,6 +127,10 @@ static spi_device_interface_config_t app_disp_sDevCfg =
 
 static uint16_t* app_disp_pu16DispPixels;
 
+#if ENABLE_DISP_FRAME_RATE_MEASURE_D
+	static uint32_t app_disp_u32FrameTime_ms = 0uL;
+#endif
+
 /************************************************************************************/
 /* FUNCTION PROTOTYPES																*/
 /************************************************************************************/
@@ -362,6 +366,9 @@ void app_disp_vRunDisplayTask(void)
 
 	static uint16_t u16DispColumnsCounter = 0u;
 	static uint8_t u8FirstTime = 1u;
+	static uint32_t u32StartTime = 0uL;
+	static uint32_t u32EndTime = 0uL;
+
 	uint16_t* pu16Pixels;
 
 	if(u8FirstTime == 0u)
@@ -371,13 +378,26 @@ void app_disp_vRunDisplayTask(void)
 	}
 	else
 	{
-		/* Do nothing for the first time */
+#if ENABLE_DISP_FRAME_RATE_MEASURE_D
+		/* Start to measure time */
+		u32StartTime = (uint32_t)xTaskGetTickCount();
+#endif
 		u8FirstTime = 0u;
 	}
 
 	if(u16DispColumnsCounter == DISP_COLUMNS_D)
 	{
+#if ENABLE_DISP_FRAME_RATE_MEASURE_D
+		/* Stop measuring time after one frame was displayed */
+		u32EndTime = (uint32_t)xTaskGetTickCount();
+		/* Calculate elapsed time */
+		app_disp_u32FrameTime_ms = u32EndTime - u32StartTime;
+#endif
 		u16DispColumnsCounter = 0u;
+#if ENABLE_DISP_FRAME_RATE_MEASURE_D
+		/* Start to measure time */
+		u32StartTime = (uint32_t)xTaskGetTickCount();
+#endif
 	}
 
 	pu16Pixels = app_disp_pu16DispPixels + (u16DispColumnsCounter*DISP_ROWS_D);
@@ -405,6 +425,13 @@ void app_disp_vSetRectangleColour(uint16_t u16ColPos, uint16_t u16RowPos, uint16
 	}
 
 }
+
+#if ENABLE_DISP_FRAME_RATE_MEASURE_D
+uint16_t app_disp_u16GetFrameRate(void)
+{
+	return(1000/app_disp_u32FrameTime_ms);
+}
+#endif
 
 #if 0
 

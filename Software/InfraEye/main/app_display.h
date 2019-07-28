@@ -41,27 +41,21 @@
 #define PIN_NUM_RST  18
 #define PIN_NUM_BCKL 5
 
+/* Configure display frame rate measurement */
+#define ENABLE_DISP_FRAME_RATE_MEASURE_D	(1)
+
 //To speed up transfers, every SPI transfer sends a bunch of lines. This define specifies how many. More means more memory use,
 //but less overhead for setting up / finishing transfers. Make sure 240 is dividable by this.
 #define app_disp_PARALLEL_LINES_D 	(48)
-
-//Define the height and width of the jpeg file. Make sure this matches the actual jpeg
-//dimensions.
-#define IMAGE_W 336
-#define IMAGE_H 256
-
-//Size of the work space for the jpeg decoder.
-#define WORKSZ 3100
 
 #define DISP_ROWS_D					(320)
 #define DISP_COLUMNS_D				(240)
 
 #define COLOUR_WHITE_D				(0xFFFF)
 #define COLOUR_BLACK_D				(0x0000)
-#define COLOUR_RED_D				(0xF800)
-#define COLOUR_GREEN_D				(0x07E0)
-#define COLOUR_BLUE_D				(0x001F)
-
+#define COLOUR_RED_D				(0x03E0)
+#define COLOUR_GREEN_D				(0x001F)
+#define COLOUR_BLUE_D				(0xFC00)
 
 
 /************************************************************************************/
@@ -120,36 +114,6 @@ DISP_HANDLE_T;
 /* FUNCTION PROTOTYPES																*/
 /************************************************************************************/
 
-/**
- * @brief Calculate the effect for a bunch of lines.
- *
- * @param dest Destination for the pixels. Assumed to be LINECT * 320 16-bit pixel values.
- * @param line Starting line of the chunk of lines.
- * @param frame Current frame, used for animation
- * @param linect Amount of lines to calculate
- */
-//void pretty_effect_calc_lines(uint16_t *dest, int line, int frame, int linect);
-
-
-/**
- * @brief Initialize the effect
- *
- * @return ESP_OK on success, an error from the jpeg decoder otherwise.
- */
-//esp_err_t pretty_effect_init();
-
-
-/**
- * @brief Decode the jpeg ``image.jpg`` embedded into the program file into pixel data.
- *
- * @param pixels A pointer to a pointer for an array of rows, which themselves are an array of pixels.
- *        Effectively, you can get the pixel data by doing ``decode_image(&myPixels); pixelval=myPixels[ypos][xpos];``
- * @return - ESP_ERR_NOT_SUPPORTED if image is malformed or a progressive jpeg file
- *         - ESP_ERR_NO_MEM if out of memory
- *         - ESP_OK on succesful decode
- */
-esp_err_t decode_image(uint16_t ***pixels);
-
 void app_disp_vInitialize(void);
 
 uint32_t app_disp_u32LCD_GetID(void);
@@ -162,7 +126,9 @@ void app_disp_vSetRectangleColour(uint16_t u16ColPos, uint16_t u16RowPos, uint16
 
 void app_disp_vGetFreeHandle(DISP_HANDLE_T* psHandle);
 
-//void display_pretty_colors(void);
+#if ENABLE_DISP_FRAME_RATE_MEASURE_D
+	uint16_t app_disp_u16GetFrameRate(void);
+#endif
 
 
 #endif /* APP_DISPLAY_H_ */

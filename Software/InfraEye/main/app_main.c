@@ -52,7 +52,7 @@ void vTask1( void *pvParameters )
 	for(;;)
 	{
 		vTaskDelayUntil( &xLastWakeTime, xFrequency );
-		ets_printf("FPS:%d\n", u32FrameRateOld);
+		ets_printf("FPS:%d\n", app_disp_u16GetFrameRate());
 	}
 	vTaskDelete(NULL);
 }
@@ -104,12 +104,8 @@ void vTask2( void *pvParameters )
 
 void app_main()
 {
-	uint32_t u32TimeIdleStart = 0uL;
-	uint32_t u32TimeIdleEnd = 0uL;
-
 	TaskHandle_t xHandleTask1 = NULL;
 	TaskHandle_t xHandleTask2 = NULL;
-
 	uint8_t address = 0;
 
     app_disp_vInitialize();
@@ -135,20 +131,9 @@ void app_main()
 	                    ( void * ) 1,    /* Parameter passed into the task. */
 	                    2,
 	                    &xHandleTask2 );      /* Used to pass out the created task's handle. */
-	u32TimeIdleStart = (uint32_t)xTaskGetTickCount();
+
     while(1)
     {
       	app_disp_vRunDisplayTask();
-    	u32TimeIdleEnd = (uint32_t)xTaskGetTickCount();
-    	if((u32TimeIdleEnd - u32TimeIdleStart) > 1000)
-    	{
-    		u32TimeIdleStart = (uint32_t)xTaskGetTickCount();
-    		u32FrameRateOld = u32FrameRate;
-    		u32FrameRate = 0;
-    	}
-    	else
-    	{
-    		u32FrameRate++;
-    	}
     }
 }
