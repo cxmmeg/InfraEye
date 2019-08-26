@@ -167,6 +167,7 @@ int MLX90640_SetResolution(uint8_t slaveAddr, uint8_t resolution)
     value = (resolution & 0x03) << 10;
     
     error = MLX90640_I2CRead(slaveAddr, 0x800D, 1, &controlRegister1);
+
     if(error == 0)
     {
         value = (controlRegister1 & 0xF3FF) | value;
