@@ -43,19 +43,20 @@ int MLX90640_I2CRead(uint8_t slaveAddr, uint16_t startAddress, uint16_t nMemAddr
 	// Write register address
 	cmd = i2c_cmd_link_create();
 	i2c_master_start(cmd);
-	error = i2c_master_write_byte(cmd, (slaveAddr << 1) | I2C_MASTER_READ, ACK_CHECK_EN);
+	error = i2c_master_write_byte(cmd, (slaveAddr << 1) | I2C_MASTER_WRITE, ACK_CHECK_EN);
 	i2c_master_write_byte(cmd, startAddress >> 8, ACK_CHECK_EN);
 	i2c_master_write_byte(cmd, startAddress &0x00FF, ACK_CHECK_EN);
 	ets_printf("I2C Write address 0x%.4x Error: %d\n", startAddress, error);
 
 	// Read data
 	i2c_master_start(cmd);
-	//ets_printf("I2C Read data 0x");
-	i2c_master_read(cmd, (uint8_t*)data, nMemAddressRead, ACK_CHECK_EN);
+	error = i2c_master_write_byte(cmd, (slaveAddr << 1) | I2C_MASTER_READ, ACK_CHECK_EN);
+
+	i2c_master_read(cmd, (uint8_t*)data, nMemAddressRead*2, ACK_CHECK_DIS);
 	i2c_master_stop(cmd);
 	i2c_ret = i2c_master_cmd_begin(I2C_MASTER_NUM, cmd, (1000 / portTICK_RATE_MS));	//"(# / portTICK_RATE_MS)"=maximum wait time. This task will be blocked until all the commands have been sent (not thread-safe - if you want to use one I2C port in different tasks you need to take care of multi-thread issues)
 	i2c_cmd_link_delete(cmd);
-
+	ets_printf("I2C Read data 0x%4x", data[0]);
 	ets_printf("---I2C Reading End---");
 	return error;   
 } 
@@ -67,7 +68,7 @@ int MLX90640_I2CWrite(uint8_t slaveAddr, uint16_t writeAddress, uint16_t data)
 	esp_err_t i2c_ret;
 	uint16_t dataCheck;
 
-/*	ets_printf("---I2C Writing---");
+	ets_printf("---I2C Writing---");
 
 	// Write register address
 	cmd = i2c_cmd_link_create();
@@ -81,7 +82,7 @@ int MLX90640_I2CWrite(uint8_t slaveAddr, uint16_t writeAddress, uint16_t data)
 //	i2c_cmd_link_delete(cmd);
 
 	// Write data
-	i2c_master_start(cmd);
+//	i2c_master_start(cmd);
 	//ets_printf("I2C Read data 0x");
 //	i2c_master_write(cmd, (uint8_t*)data, 2, ACK_CHECK_EN);
 	i2c_master_write_byte(cmd, data >> 8, ACK_CHECK_EN);
@@ -89,7 +90,7 @@ int MLX90640_I2CWrite(uint8_t slaveAddr, uint16_t writeAddress, uint16_t data)
 	i2c_master_stop(cmd);
 	i2c_ret = i2c_master_cmd_begin(I2C_MASTER_NUM, cmd, (1000 / portTICK_RATE_MS));	//"(# / portTICK_RATE_MS)"=maximum wait time. This task will be blocked until all the commands have been sent (not thread-safe - if you want to use one I2C port in different tasks you need to take care of multi-thread issues)
 	i2c_cmd_link_delete(cmd);
-*/
+
 	MLX90640_I2CRead(slaveAddr, writeAddress, 1, &dataCheck);
     
 	if ( dataCheck != data)
