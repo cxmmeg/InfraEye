@@ -53,17 +53,17 @@ uint8_t IRsensor_Init(void)
 
 	MLX90640_I2CInit();
   // Scan I2C to make sure IR sensor is present
-//  address = I2C_scan();
+  address = I2C_scan();
 
   // Initialize IR sensor
   result = MLX90640_SetResolution(MLX90640_ADR, 0x02);
 //  Serial.println("Get MLX90640 resolution:");
   result = MLX90640_GetCurResolution(MLX90640_ADR);
 //  Serial.println(result);
-//  MLX90640_SetRefreshRate(MLX90640_ADR, RR4Hz);
-//  MLX90640_SetInterleavedMode(MLX90640_ADR);
-//  status = MLX90640_DumpEE (MLX90640_ADR, eeMLX90640);
-//  status = MLX90640_ExtractParameters(eeMLX90640, &mlx90640);
+  MLX90640_SetRefreshRate(MLX90640_ADR, RR4Hz);
+  MLX90640_SetInterleavedMode(MLX90640_ADR);
+  status = MLX90640_DumpEE (MLX90640_ADR, eeMLX90640);
+  status = MLX90640_ExtractParameters(eeMLX90640, &mlx90640);
 //
   return(result);
 }
