@@ -36,9 +36,10 @@ int MLX90640_I2CRead(uint8_t slaveAddr, uint16_t startAddress, uint16_t nMemAddr
 	esp_err_t error = -1;
 	i2c_cmd_handle_t cmd;
 	esp_err_t i2c_ret;
+	uint8_t buff[2];
     
-	ets_printf("---I2C Reading---");
-	ets_printf("S nMemAdd: %d\n", nMemAddressRead);
+	ets_printf("---I2C Reading---\n");
+	ets_printf("%d words to read\n", nMemAddressRead);
 
 	// Write register address
 	cmd = i2c_cmd_link_create();
@@ -52,10 +53,13 @@ int MLX90640_I2CRead(uint8_t slaveAddr, uint16_t startAddress, uint16_t nMemAddr
 	i2c_master_start(cmd);
 	error = i2c_master_write_byte(cmd, (slaveAddr << 1) | I2C_MASTER_READ, ACK_CHECK_EN);
 
-	i2c_master_read(cmd, (uint8_t*)data, nMemAddressRead*2, ACK_CHECK_DIS);
+	//i2c_master_read(cmd, (uint8_t*)data, nMemAddressRead*2, ACK_CHECK_DIS);
+	i2c_master_read_byte(cmd, &buff[1], ACK_CHECK_EN);
+	i2c_master_read_byte(cmd, &buff[0], ACK_CHECK_DIS);
 	i2c_master_stop(cmd);
 	i2c_ret = i2c_master_cmd_begin(I2C_MASTER_NUM, cmd, (1000 / portTICK_RATE_MS));	//"(# / portTICK_RATE_MS)"=maximum wait time. This task will be blocked until all the commands have been sent (not thread-safe - if you want to use one I2C port in different tasks you need to take care of multi-thread issues)
 	i2c_cmd_link_delete(cmd);
+	data[0] = (buff[1]<<8) + buff[0];
 	ets_printf("I2C Read data 0x%4x", data[0]);
 	ets_printf("---I2C Reading End---");
 	return error;   
