@@ -34,6 +34,7 @@
 uint32_t u32FrameRate = 0uL;	// Number or Idle task executions in 1 second
 uint32_t u32FrameRateOld = 0uL;	// Number or Idle task executions in 1 second
 uint16_t u16Color;
+uint16_t u16_pixelValue[768];
 
 /************************************************************************************/
 /* FUNCTION PROTOTYPES																*/
@@ -47,10 +48,15 @@ void vTask1( void *pvParameters )
 {
 	TickType_t xLastWakeTime;
 	const TickType_t xFrequency = 1000;
+	uint8_t subPage;
 
 	xLastWakeTime = xTaskGetTickCount();
 	for(;;)
 	{
+		subPage = IRsensor_CurrentSubPage();
+		// -------------- Read subframe ----------------------------
+		//IRsensor_LoadSubPage(pixelValue);
+		IRsensor_LoadSubPage_u16(u16_pixelValue);
 		vTaskDelayUntil( &xLastWakeTime, xFrequency );
 		ets_printf("FPS:%d\n", app_disp_u16GetFrameRate());
 	}
@@ -112,11 +118,11 @@ void app_main()
     address = IRsensor_Init();
     if(address==0xFF)
     {
-    	u16Color = colour_White_e;
+    	u16Color = colour_Red_e;
     }
     else
     {
-    	u16Color = colour_Red_e;
+    	u16Color = colour_Green_e;
     }
 	ets_printf("Address:0x%x\n", address);
 
