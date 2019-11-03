@@ -58,11 +58,11 @@ int MLX90640_I2CRead(uint8_t slaveAddr, uint16_t startAddress, uint16_t nMemAddr
 	i2c_ret = i2c_master_cmd_begin(I2C_MASTER_NUM, cmd, (1000 / portTICK_RATE_MS));	//"(# / portTICK_RATE_MS)"=maximum wait time. This task will be blocked until all the commands have been sent (not thread-safe - if you want to use one I2C port in different tasks you need to take care of multi-thread issues)
 	i2c_cmd_link_delete(cmd);
 
-	for(i=0;i<nMemAddressRead;i++)	// MSB and LSB not in correct order, swap them
+	/*for(i=0;i<nMemAddressRead;i++)	// MSB and LSB not in correct order, swap them
 	{
 		tmp = data[i] & 0xFF;
 		data[i] = (data[i]>>8) + (tmp<<8);
-	}
+	}*/
 
 	ets_printf("I2C Read data 0x%4x\n", data[0]);
 	ets_printf("---I2C Reading End---\n");

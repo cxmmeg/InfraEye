@@ -112,7 +112,7 @@ static spi_bus_config_t app_disp_sBusCfg =
 	.sclk_io_num = PIN_NUM_CLK,
 	.quadwp_io_num = -1,
 	.quadhd_io_num = -1,
-	.max_transfer_sz = app_disp_PARALLEL_LINES_D*320*2 + 8
+	.max_transfer_sz = app_disp_PARALLEL_LINES_D*DISP_COLUMNS_D*2 + 8
 };
 
 static spi_device_interface_config_t app_disp_sDevCfg =
@@ -164,8 +164,9 @@ void app_disp_vInitialize(void)
 
 	/* Initialize the LCD */
 	app_disp_vLCD_Init(app_disp_psSPI_Device);
-
+	heap_caps_print_heap_info(MALLOC_CAP_DMA);
 	app_disp_pu16DispPixels = heap_caps_malloc(DISP_COLUMNS_D*DISP_ROWS_D*sizeof(uint16_t), MALLOC_CAP_DMA);
+	heap_caps_print_heap_info(MALLOC_CAP_DMA);
     assert(app_disp_pu16DispPixels != NULL);
 
 }
@@ -319,8 +320,8 @@ static void app_disp_vSendLines(spi_device_handle_t psSPI_Device, int intPosY, u
     asTransaction[0].tx_data[0] = 0x2A;           //Column Address Set
     asTransaction[1].tx_data[0] = 0;              //Start Col High
     asTransaction[1].tx_data[1] = 0;              //Start Col Low
-    asTransaction[1].tx_data[2] = (320) >> 8;     //End Col High
-    asTransaction[1].tx_data[3] = (320) & 0xFF;   //End Col Low
+    asTransaction[1].tx_data[2] = (DISP_COLUMNS_D) >> 8;     //End Col High
+    asTransaction[1].tx_data[3] = (DISP_COLUMNS_D) & 0xFF;   //End Col Low
     asTransaction[2].tx_data[0] = 0x2B;           //Page address set
     asTransaction[3].tx_data[0] = intPosY >> 8;        //Start page high
     asTransaction[3].tx_data[1] = intPosY & 0xFF;      //start page low
@@ -328,7 +329,7 @@ static void app_disp_vSendLines(spi_device_handle_t psSPI_Device, int intPosY, u
     asTransaction[3].tx_data[3] = (intPosY + app_disp_PARALLEL_LINES_D) & 0xFF;  	//end page low
     asTransaction[4].tx_data[0] = 0x2C;           //memory write
     asTransaction[5].tx_buffer = pu16LineData;    //finally send the line data
-    asTransaction[5].length = 320*2*8*app_disp_PARALLEL_LINES_D;          //Data length, in bits
+    asTransaction[5].length = DISP_COLUMNS_D*2*8*app_disp_PARALLEL_LINES_D;          //Data length, in bits
     asTransaction[5].flags = 0; //undo SPI_TRANS_USE_TXDATA flag
 
     //Queue all transactions.
@@ -431,201 +432,4 @@ uint16_t app_disp_u16GetFrameRate(void)
 {
 	return(1000/app_disp_u32FrameTime_ms);
 }
-#endif
-
-#if 0
-
-//Simple routine to generate some patterns and send them to the LCD. Don't expect anything too
-//impressive. Because the SPI driver handles transactions in the background, we can calculate the next line
-//while the previous one is being sent.
-void display_pretty_colors(void)
-{
-    uint16_t *lines[2];
-    //Allocate memory for the pixel buffers
-    for (int i = 0; i < 2; i++)
-    {
-        lines[i] = heap_caps_malloc(320*app_disp_PARALLEL_LINES_D*sizeof(uint16_t), MALLOC_CAP_DMA);
-        assert(lines[i] != NULL);
-    }
-    int frame = 0;
-    //Indexes of the line currently being sent to the LCD and the line we're calculating.
-    int sending_line = -1;
-    int calc_line = 0;
-
-    while(1)
-    {
-        frame++;
-        for (int y = 0; y < 240; y += app_disp_PARALLEL_LINES_D)
-        {
-            //Calculate a line.
-            pretty_effect_calc_lines(lines[calc_line], y, frame, app_disp_PARALLEL_LINES_D);
-
-            //Finish up the sending process of the previous line, if any
-            if (sending_line != -1)
-            {
-            	app_disp_vSendLineFinish(app_disp_psSPI_Device);
-            }
-            //Swap sending_line and calc_line
-            sending_line = calc_line;
-            calc_line = (calc_line == 1) ? 0:1;
-            //Send the line we currently calculated.
-
-            app_disp_vSendLines(app_disp_psSPI_Device, y, lines[sending_line]);
-            //The line set is queued up for sending now; the actual sending happens in the
-            //background. We can go on to calculate the next line set as long as we do not
-            //touch line[sending_line]; the SPI sending process is still reading from that.
-        }
-    }
-}
-
-uint16_t **pixels;
-
-//Grab a rgb16 pixel from the esp32_tiles image
-static inline uint16_t get_bgnd_pixel(int x, int y)
-{
-    //Image has an 8x8 pixel margin, so we can also resolve e.g. [-3, 243]
-    x+=8;
-    y+=8;
-    return pixels[y][x];
-}
-
-
-//This variable is used to detect the next frame.
-static int prev_frame=-1;
-
-//Instead of calculating the offsets for each pixel we grab, we pre-calculate the valueswhenever a frame changes, then re-use
-//these as we go through all the pixels in the frame. This is much, much faster.
-static int8_t xofs[320], yofs[240];
-static int8_t xcomp[320], ycomp[240];
-
-//Calculate the pixel data for a set of lines (with implied line size of 320). Pixels go in dest, line is the Y-coordinate of the
-//first line to be calculated, linect is the amount of lines to calculate. Frame increases by one every time the entire image
-//is displayed; this is used to go to the next frame of animation.
-void pretty_effect_calc_lines(uint16_t *dest, int line, int frame, int linect)
-{
-    if (frame!=prev_frame) {
-        //We need to calculate a new set of offset coefficients. Take some random sines as offsets to make everything
-        //look pretty and fluid-y.
-        for (int x=0; x<320; x++) xofs[x]=sin(frame*0.15+x*0.06)*4;
-        for (int y=0; y<240; y++) yofs[y]=sin(frame*0.1+y*0.05)*4;
-        for (int x=0; x<320; x++) xcomp[x]=sin(frame*0.11+x*0.12)*4;
-        for (int y=0; y<240; y++) ycomp[y]=sin(frame*0.07+y*0.15)*4;
-        prev_frame=frame;
-    }
-    for (int y=line; y<line+linect; y++) {
-        for (int x=0; x<320; x++) {
-            *dest++=get_bgnd_pixel(x+yofs[y]+xcomp[x], y+xofs[x]+ycomp[y]);
-        }
-    }
-}
-
-
-esp_err_t pretty_effect_init()
-{
-    return decode_image(&pixels);
-}
-
-//Input function for jpeg decoder. Just returns bytes from the inData field of the JpegDev structure.
-static UINT infunc(JDEC *decoder, BYTE *buf, UINT len)
-{
-    //Read bytes from input file
-    JpegDev *jd=(JpegDev*)decoder->device;
-    if (buf!=NULL) memcpy(buf, jd->inData+jd->inPos, len);
-    jd->inPos+=len;
-    return len;
-}
-
-//Output function. Re-encodes the RGB888 data from the decoder as big-endian RGB565 and
-//stores it in the outData array of the JpegDev structure.
-static UINT outfunc(JDEC *decoder, void *bitmap, JRECT *rect)
-{
-    JpegDev *jd=(JpegDev*)decoder->device;
-    uint8_t *in=(uint8_t*)bitmap;
-    for (int y=rect->top; y<=rect->bottom; y++) {
-        for (int x=rect->left; x<=rect->right; x++) {
-            //We need to convert the 3 bytes in `in` to a rgb565 value.
-            uint16_t v=0;
-            v|=((in[0]>>3)<<11);
-            v|=((in[1]>>2)<<5);
-            v|=((in[2]>>3)<<0);
-            //The LCD wants the 16-bit value in big-endian, so swap bytes
-            v=(v>>8)|(v<<8);
-            jd->outData[y][x]=v;
-            in+=3;
-        }
-    }
-    return 1;
-}
-
-//Decode the embedded image into pixel lines that can be used with the rest of the logic.
-esp_err_t decode_image(uint16_t ***pixels)
-{
-    char *work=NULL;
-    int r;
-    JDEC decoder;
-    JpegDev jd;
-    *pixels=NULL;
-    esp_err_t ret=ESP_OK;
-
-
-    //Alocate pixel memory. Each line is an array of IMAGE_W 16-bit pixels; the `*pixels` array itself contains pointers to these lines.
-    *pixels=calloc(IMAGE_H, sizeof(uint16_t*));
-    if (*pixels==NULL) {
-        ESP_LOGE(TAG, "Error allocating memory for lines");
-        ret=ESP_ERR_NO_MEM;
-        goto err;
-    }
-    for (int i=0; i<IMAGE_H; i++) {
-        (*pixels)[i]=malloc(IMAGE_W*sizeof(uint16_t));
-        if ((*pixels)[i]==NULL) {
-            ESP_LOGE(TAG, "Error allocating memory for line %d", i);
-            ret=ESP_ERR_NO_MEM;
-            goto err;
-        }
-    }
-
-    //Allocate the work space for the jpeg decoder.
-    work=calloc(WORKSZ, 1);
-    if (work==NULL) {
-        ESP_LOGE(TAG, "Cannot allocate workspace");
-        ret=ESP_ERR_NO_MEM;
-        goto err;
-    }
-
-    //Populate fields of the JpegDev struct.
-    jd.inData=image_jpg_start;
-    jd.inPos=0;
-    jd.outData=*pixels;
-    jd.outW=IMAGE_W;
-    jd.outH=IMAGE_H;
-
-    //Prepare and decode the jpeg.
-    r=jd_prepare(&decoder, infunc, work, WORKSZ, (void*)&jd);
-    if (r!=JDR_OK) {
-        ESP_LOGE(TAG, "Image decoder: jd_prepare failed (%d)", r);
-        ret=ESP_ERR_NOT_SUPPORTED;
-        goto err;
-    }
-    r=jd_decomp(&decoder, outfunc, 0);
-    if (r!=JDR_OK) {
-        ESP_LOGE(TAG, "Image decoder: jd_decode failed (%d)", r);
-        ret=ESP_ERR_NOT_SUPPORTED;
-        goto err;
-    }
-
-    //All done! Free the work area (as we don't need it anymore) and return victoriously.
-    free(work);
-    return ret;
-err:
-    //Something went wrong! Exit cleanly, de-allocating everything we allocated.
-    if (*pixels!=NULL) {
-        for (int i=0; i<IMAGE_H; i++) {
-            free((*pixels)[i]);
-        }
-        free(*pixels);
-    }
-    free(work);
-    return ret;
-}
-
 #endif

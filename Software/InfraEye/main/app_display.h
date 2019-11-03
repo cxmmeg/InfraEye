@@ -46,10 +46,10 @@
 
 //To speed up transfers, every SPI transfer sends a bunch of lines. This define specifies how many. More means more memory use,
 //but less overhead for setting up / finishing transfers. Make sure 240 is dividable by this.
-#define app_disp_PARALLEL_LINES_D 	(48)
+#define app_disp_PARALLEL_LINES_D 	(1)	//TODO VO If set to any higher than 1, each line is shifted by 1 in comparison with previous line, which creates distorted image
 
-#define DISP_ROWS_D					(320)
-#define DISP_COLUMNS_D				(240)
+#define DISP_ROWS_D					(120)
+#define DISP_COLUMNS_D				(120)
 
 #define COLOUR_WHITE_D				(0xFFFF)
 #define COLOUR_BLACK_D				(0x0000)

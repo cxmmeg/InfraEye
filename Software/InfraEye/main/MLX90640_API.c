@@ -43,6 +43,7 @@ int IsPixelBad(uint16_t pixel,paramsMLX90640 *params);
   
 int MLX90640_DumpEE(uint8_t slaveAddr, uint16_t *eeData)
 {
+	ets_printf("---Read dump---\n");
      return MLX90640_I2CRead(slaveAddr, 0x2400, 832, eeData);
 }
 
@@ -136,20 +137,24 @@ int MLX90640_ExtractParameters(uint16_t *eeData, paramsMLX90640 *mlx90640)
     
     if(error == 0)
     {
+    	ets_printf("---0---\n");
         ExtractVDDParameters(eeData, mlx90640);
         ExtractPTATParameters(eeData, mlx90640);
         ExtractGainParameters(eeData, mlx90640);
         ExtractTgcParameters(eeData, mlx90640);
         ExtractResolutionParameters(eeData, mlx90640);
+        ets_printf("---5---\n");
         ExtractKsTaParameters(eeData, mlx90640);
         ExtractKsToParameters(eeData, mlx90640);
         ExtractAlphaParameters(eeData, mlx90640);
         ExtractOffsetParameters(eeData, mlx90640);
         ExtractKtaPixelParameters(eeData, mlx90640);
+        ets_printf("---10---\n");
         ExtractKvPixelParameters(eeData, mlx90640);
         ExtractCPParameters(eeData, mlx90640);
         ExtractCILCParameters(eeData, mlx90640);
-        error = ExtractDeviatingPixels(eeData, mlx90640);  
+        error = ExtractDeviatingPixels(eeData, mlx90640);
+        ets_printf("---14---\n");
     }
     
     return error;

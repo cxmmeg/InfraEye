@@ -65,45 +65,20 @@ void vTask1( void *pvParameters )
 
 void vTask2( void *pvParameters )
 {
-	TickType_t xLastWakeTime;
-	const TickType_t xFrequency = 14;
-	uint16_t u16RectPosCol = 0u;
-	uint16_t u16RectPosRow = 0u;
-	uint16_t u16LastRectPosCol = 216u;
-	uint16_t u16LastRectPosRow = 288u;
+	app_disp_vSetRectangleColour(0u,0u,DISP_ROWS_D, DISP_COLUMNS_D, (uint16_t)colour_Green_e);
+	app_disp_vSetRectangleColour(10u,10u,100,100u,(uint16_t)colour_Blue_e);
+	app_disp_vSetRectangleColour(20u,20u,80u,80u,(uint16_t)colour_Red_e);
+	app_disp_vSetRectangleColour(30u,30u,60u,60u,(uint16_t)colour_White_e);
+	app_disp_vSetRectangleColour(40u,40u,40u,40u,(uint16_t)colour_Black_e);
 
-	app_disp_vSetRectangleColour(0u,0u,240u,320u,(uint16_t)colour_Green_e);
-	xLastWakeTime = xTaskGetTickCount();
+	//xLastWakeTime = xTaskGetTickCount();
 	for(;;)
 	{
-		vTaskDelayUntil( &xLastWakeTime, xFrequency );
-		//ets_printf("Task2\n");
-    	/* Set last position to blue colour */
-        app_disp_vSetRectangleColour(u16LastRectPosCol,u16LastRectPosRow,24u,32u,(uint16_t)colour_Blue_e);
-        /* Set new rectangle position */
-        app_disp_vSetRectangleColour(u16RectPosCol,u16RectPosRow,24u,32u,(uint16_t)u16Color);
+		for(;;)
+		{
 
-        u16LastRectPosCol = u16RectPosCol;
-        u16LastRectPosRow = u16RectPosRow;
+		}
 
-        /* Move rectangle */
-    	if((u16RectPosRow + 32u) < 320u)
-    	{
-    		u16RectPosRow += 1u ;
-    	}
-    	else
-    	{
-    		u16RectPosRow = 0u;
-
-    		if((u16RectPosCol + 24u) < 240u)
-    		{
-    			u16RectPosCol += 6u;
-    		}
-    		else
-    		{
-    			u16RectPosCol = 0u;
-    		}
-    	}
 	}
 	vTaskDelete(NULL);
 }
@@ -126,13 +101,13 @@ void app_main()
     }
 	ets_printf("Address:0x%x\n", address);
 
-	xTaskCreate(vTask1, "Task1",
+	xTaskCreate(vTask1, "IRsens",
 	                    1500,      /* Stack size in words, not bytes. */
 	                    ( void * ) 1,    /* Parameter passed into the task. */
 	                    1,
 	                    &xHandleTask1 );      /* Used to pass out the created task's handle. */
 
-	xTaskCreate(vTask2, "Task2",
+	xTaskCreate(vTask2, "LCD",
 	                    1500,      /* Stack size in words, not bytes. */
 	                    ( void * ) 1,    /* Parameter passed into the task. */
 	                    2,
