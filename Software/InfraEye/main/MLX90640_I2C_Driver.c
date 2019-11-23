@@ -36,11 +36,12 @@ int MLX90640_I2CRead(uint8_t slaveAddr, uint16_t startAddress, uint16_t nMemAddr
 	esp_err_t error = -1;
 	i2c_cmd_handle_t cmd;
 	esp_err_t i2c_ret;
-	uint8_t tmp, i;
-    
+	uint16_t u16Tmp, i;
+
+#if MLX90640_I2C_DRIVER_MODULE_SEND_MSG_ENABLED
 	ets_printf("---I2C Reading---\n");
 	ets_printf("Read %d words from address 0x%x to read\n", nMemAddressRead, startAddress);
-
+#endif
 	// Write register address
 	cmd = i2c_cmd_link_create();
 	i2c_master_start(cmd);
@@ -58,14 +59,18 @@ int MLX90640_I2CRead(uint8_t slaveAddr, uint16_t startAddress, uint16_t nMemAddr
 	i2c_ret = i2c_master_cmd_begin(I2C_MASTER_NUM, cmd, (1000 / portTICK_RATE_MS));	//"(# / portTICK_RATE_MS)"=maximum wait time. This task will be blocked until all the commands have been sent (not thread-safe - if you want to use one I2C port in different tasks you need to take care of multi-thread issues)
 	i2c_cmd_link_delete(cmd);
 
-	/*for(i=0;i<nMemAddressRead;i++)	// MSB and LSB not in correct order, swap them
+#if 1
+	for(i = 0;i < nMemAddressRead; i++)	// MSB and LSB not in correct order, swap them
 	{
-		tmp = data[i] & 0xFF;
-		data[i] = (data[i]>>8) + (tmp<<8);
-	}*/
+		u16Tmp = data[i] & 0x00FF;
+		data[i] = (data[i]>>8) + (u16Tmp<<8);
+	}
+#endif
 
+#if	MLX90640_I2C_DRIVER_MODULE_SEND_MSG_ENABLED
 	ets_printf("I2C Read data 0x%4x\n", data[0]);
 	ets_printf("---I2C Reading End---\n");
+#endif
 	return error;   
 } 
 
@@ -76,15 +81,18 @@ int MLX90640_I2CWrite(uint8_t slaveAddr, uint16_t writeAddress, uint16_t data)
 	esp_err_t i2c_ret;
 	uint16_t dataCheck;
 
+#if MLX90640_I2C_DRIVER_MODULE_SEND_MSG_ENABLED
 	ets_printf("---I2C Writing---\n");
-
+#endif
 	// Write register address
 	cmd = i2c_cmd_link_create();
 	i2c_master_start(cmd);
 	error = i2c_master_write_byte(cmd, (slaveAddr << 1) | I2C_MASTER_WRITE, ACK_CHECK_EN);
 	i2c_master_write_byte(cmd, writeAddress >> 8, ACK_CHECK_EN);
 	i2c_master_write_byte(cmd, writeAddress &0x00FF, ACK_CHECK_EN);
+#if MLX90640_I2C_DRIVER_MODULE_SEND_MSG_ENABLED
 	ets_printf("I2C Write address 0x%.4x and data: 0x%.4x Error: %d\n", writeAddress, data, error);
+#endif
 //	i2c_master_stop(cmd);
 //	i2c_ret = i2c_master_cmd_begin(I2C_MASTER_NUM, cmd, (1000 / portTICK_RATE_MS));	//"(# / portTICK_RATE_MS)"=maximum wait time. This task will be blocked until all the commands have been sent (not thread-safe - if you want to use one I2C port in different tasks you need to take care of multi-thread issues)
 //	i2c_cmd_link_delete(cmd);
@@ -93,8 +101,9 @@ int MLX90640_I2CWrite(uint8_t slaveAddr, uint16_t writeAddress, uint16_t data)
 //	i2c_master_start(cmd);
 	//ets_printf("I2C Read data 0x");
 //	i2c_master_write(cmd, (uint8_t*)data, 2, ACK_CHECK_EN);
+	i2c_master_write_byte(cmd, data & 0x00FF, ACK_CHECK_EN);
 	i2c_master_write_byte(cmd, data >> 8, ACK_CHECK_EN);
-	i2c_master_write_byte(cmd, data & 0x00FF, ACK_CHECK_DIS);
+
 	i2c_master_stop(cmd);
 	i2c_ret = i2c_master_cmd_begin(I2C_MASTER_NUM, cmd, (1000 / portTICK_RATE_MS));	//"(# / portTICK_RATE_MS)"=maximum wait time. This task will be blocked until all the commands have been sent (not thread-safe - if you want to use one I2C port in different tasks you need to take care of multi-thread issues)
 	i2c_cmd_link_delete(cmd);
@@ -103,11 +112,14 @@ int MLX90640_I2CWrite(uint8_t slaveAddr, uint16_t writeAddress, uint16_t data)
     
 	if ( dataCheck != data)
 	{
+#if MLX90640_I2C_DRIVER_MODULE_SEND_MSG_ENABLED
 		ets_printf("I2C Verify data: 0x%.4x VS 0x%.4x\n", dataCheck, data);
+#endif
 		return -2;
 	}    
-    
+#if MLX90640_I2C_DRIVER_MODULE_SEND_MSG_ENABLED
 	ets_printf("---I2C Writing End---\n");
+#endif
     return 0;
 }
 

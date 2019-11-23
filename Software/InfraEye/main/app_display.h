@@ -57,6 +57,14 @@
 #define COLOUR_GREEN_D				(0x001F)
 #define COLOUR_BLUE_D				(0xFC00)
 
+#define INPUT_ARRAY_LENGTH_D    (24)
+#define INPUT_ARRAY_WIDTH_D     (32)
+#define SCALING_FACTOR_D        (1)
+#define OUTPUT_ARRAY_LENGTH_D   ((INPUT_ARRAY_LENGTH_D * SCALING_FACTOR_D) - SCALING_FACTOR_D)
+#define OUTPUT_ARRAY_WIDTH_D    ((INPUT_ARRAY_WIDTH_D * SCALING_FACTOR_D) - SCALING_FACTOR_D)
+#define OUTPUT_NUM_OF_PIXELS_D  (OUTPUT_ARRAY_LENGTH_D * OUTPUT_ARRAY_WIDTH_D)
+// Output buffer size shall be multiple of OUTPUT_ARRAY_WIDTH_D
+#define OUTPUT_BUFFER_SIZE_D    (32 * OUTPUT_ARRAY_LENGTH_D)
 
 /************************************************************************************/
 /* TYPEDEFS																			*/
@@ -130,5 +138,6 @@ void app_disp_vGetFreeHandle(DISP_HANDLE_T* psHandle);
 	uint16_t app_disp_u16GetFrameRate(void);
 #endif
 
+void LCD_Convert_u16(uint16_t *frameTemperature, uint16_t *frameColor, uint16_t frameSize, uint16_t minTemperature, uint16_t maxTemperature);
 
 #endif /* APP_DISPLAY_H_ */
