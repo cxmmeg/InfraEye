@@ -81,7 +81,7 @@ void vTask1( void *pvParameters )
 			/* Update min/max temperature values */
 			IRsensor_UpdateMinMax_u16(&app_main_u16MinTemp, &app_main_u16MaxTemp, app_main_au16PixelValue);
 
-			//LCD_Convert_u16(app_main_au16PixelValue, app_main_au16DisplayFrame, 768, app_main_u16MinTemp, app_main_u16MaxTemp);
+			LCD_Convert_u16(app_main_au16PixelValue, app_main_au16DisplayFrame, 768, app_main_u16MinTemp, app_main_u16MaxTemp);
 
 			app_main_u8DataReady = 1u;
 			ets_printf("TempMin = %d, TempMax = %d\n",(int16_t)((app_main_u16MinTemp >> TEMP_SCALE_BIT_SHIFT_D) - TEMP_OFFSET_D),
@@ -94,7 +94,7 @@ void vTask1( void *pvParameters )
 				{
 					ets_printf("\n");
 				}
-				ets_printf("%d,",app_main_au16PixelValue[i]);
+				ets_printf("%d,",(app_main_au16PixelValue[i] >> TEMP_SCALE_BIT_SHIFT_D) - TEMP_OFFSET_D);
 			}
 #endif
 		}
@@ -111,21 +111,27 @@ void vTask2( void *pvParameters )
 {
 	TickType_t xLastWakeTime;
 	uint16_t u16DispCoordinateX, u16DispCoordinateY;
+	uint8_t multiply = 3u;
 
 	xLastWakeTime = xTaskGetTickCount();
+//	ets_printf("0\n");
 	for(;;)
 	{
 		vTaskDelayUntil( &xLastWakeTime, 128);
 	    gpio_set_level(26, 1);
+//	    ets_printf("A\n");
 		if(app_main_u8DataReady)
 		{
-#if 0
-			for (uint16_t u16Iterator = 0; u16Iterator < 10; u16Iterator++)
+			//ets_printf("B\n");
+#if 1
+			for (uint16_t u16Iterator = 0; u16Iterator < 768; u16Iterator++)
 			{
-				u16DispCoordinateX = 31 - (u16Iterator / 23);
-				u16DispCoordinateY = u16Iterator % 23;
+				//ets_printf("C\n");
+				u16DispCoordinateX = u16Iterator % 32;
+				u16DispCoordinateY = u16Iterator / 32;
 
-				//app_disp_vSetRectangleColour(4*u16DispCoordinateX,4*u16DispCoordinateY,4u,4u,app_main_au16DisplayFrame[u16Iterator]);
+				app_disp_vSetRectangleColour(multiply*u16DispCoordinateX, multiply*u16DispCoordinateY, multiply, multiply, app_main_au16DisplayFrame[u16Iterator]);
+				//app_disp_vSetPixelColour(u16DispCoordinateX, u16DispCoordinateY, app_main_au16DisplayFrame[u16Iterator]);
 			}
 #endif
 			app_main_u8DataReady = 0u;
@@ -156,7 +162,6 @@ void vTimerCallback( TimerHandle_t xTimer )
 
 void app_main()
 {
-
 	/* Configure PIN 27 as output for IR sensor power supply */
 	gpio_pad_select_gpio(27);
 	gpio_set_direction(27, GPIO_MODE_OUTPUT);
@@ -179,11 +184,26 @@ void app_main()
     (void)IRsensor_Init();
 
     /* Set dummy pattern for display */
-	app_disp_vSetRectangleColour(0u,0u,DISP_ROWS_D, DISP_COLUMNS_D, (uint16_t)colour_Green_e);
-	app_disp_vSetRectangleColour(10u,10u,100,100u,(uint16_t)colour_Blue_e);
-	app_disp_vSetRectangleColour(20u,20u,80u,80u,(uint16_t)colour_Red_e);
-	app_disp_vSetRectangleColour(30u,30u,60u,60u,(uint16_t)colour_White_e);
-	app_disp_vSetRectangleColour(40u,40u,40u,40u,(uint16_t)colour_Black_e);
+    app_disp_vSetRectangleColour(0u,0u,DISP_ROWS_D, DISP_COLUMNS_D, (uint16_t)colour_Black_e);
+//	app_disp_vSetRectangleColour(0u,0u,DISP_ROWS_D, DISP_COLUMNS_D, (uint16_t)colour_Red_e);
+//	app_disp_vSetRectangleColour(10u,10u,100,100u,(uint16_t)colour_Green_e);
+//	app_disp_vSetRectangleColour(20u,20u,80u,80u,(uint16_t)colour_Blue_e);
+//	app_disp_vSetRectangleColour(30u,30u,60u,60u,(uint16_t)colour_White_e);
+//	app_disp_vSetRectangleColour(40u,40u,40u,40u,(uint16_t)colour_Black_e);
+
+	uint16_t color[120], source[120];
+	uint8_t Y;
+	for(Y=0;Y<120;Y++)
+	{
+		source[Y] = Y;
+	}
+
+	LCD_Convert_u16(source, color, 120, 0, 120);
+
+	for(Y=0;Y<120;Y++)
+	{
+		app_disp_vSetRectangleColour(120-Y, 110, 1u, 10u, color[Y]);
+	}
 
 	/* Create timer for check if data is ready */
 	xTimer_1 = xTimerCreate ("Timer",pdMS_TO_TICKS( 4 ),pdTRUE,( void * ) 0,vTimerCallback);
@@ -205,7 +225,7 @@ void app_main()
 
 	/* Suspend tasks */
 	vTaskSuspend(xHandleTask1);
-	vTaskSuspend(xHandleTask2);
+//	vTaskSuspend(xHandleTask2);
 
 	/* Start timer */
 	if(xTimer_1 != NULL)

@@ -214,9 +214,10 @@ void IRsensor_vCalculatePixelTemp_u16(uint16_t* pu16PixelValue)
 {
 	/* Calculate reflected (ambient) temperature */
 	IRsensor_fReflectedTemp = MLX90640_GetTa(IRsensor_au16MLX_Frame, &IRsensor_sMLX_Parameters) - TA_SHIFT;
-	ets_printf("RT = %d \n",(int32_t)IRsensor_fReflectedTemp);
+	//ets_printf("RT = %d \n",(int32_t)IRsensor_fReflectedTemp);
 
 	MLX90640_CalculateTo_Custom_u16(IRsensor_au16MLX_Frame, &IRsensor_sMLX_Parameters, IRsensor_fEmissivity, IRsensor_fReflectedTemp, pu16PixelValue);
+	//ets_printf("T = %d \n",(int32_t)((pu16PixelValue[50]/TEMP_SCALE_FACTOR_D)-TEMP_OFFSET_D));
 }
 
 void IRsensor_UpdateMinMax(float* min_t, float* max_t, float* pixelValue)
@@ -234,6 +235,7 @@ void IRsensor_UpdateMinMax_u16(uint16_t* pu16MinTemp, uint16_t* pu16MaxTemp, uin
 {
     *pu16MinTemp = (uint16_t)((300 + TEMP_OFFSET_D) * TEMP_SCALE_FACTOR_D);
     *pu16MaxTemp = (uint16_t)((-40 + TEMP_OFFSET_D) * TEMP_SCALE_FACTOR_D);
+    uint8_t u8_MinDif = 10;	// Minimum difference between min and max
 
     for(uint16_t i = 0; i < 768u; i++)
     {
@@ -245,6 +247,10 @@ void IRsensor_UpdateMinMax_u16(uint16_t* pu16MinTemp, uint16_t* pu16MaxTemp, uin
         {
           *pu16MinTemp = pu16PixelValue[i];    
         }
+    }
+    if((*pu16MaxTemp - *pu16MinTemp) < u8_MinDif)
+    {
+    	*pu16MaxTemp = *pu16MinTemp + u8_MinDif+10;
     }
 }
 
