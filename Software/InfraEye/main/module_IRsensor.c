@@ -7,14 +7,13 @@
 
 #include "driver/i2c.h"
 
-  char str_temp[6];
-  float emissivity = 0.95;
-  float tr;
-  static uint16_t mlx90640Frame[834];
- 	uint8_t subPage;
+float IRsensor_fEmissivity = 1.0;
+float IRsensor_fReflectedTemp;
+static uint16_t IRsensor_au16MLX_Frame[834];
+uint8_t IRsensor_u8subPage = 0u;
+uint16_t IRsensor_au16EEPROM_Data[832];
+paramsMLX90640 IRsensor_sMLX_Parameters;
 
-uint16_t eeMLX90640[832];
-paramsMLX90640 mlx90640;
 #ifndef LIVE_DATA
 float mlx90640To[768] = {
 26.828890, 26.369379, 24.731531, 22.822830, 21.742044, 22.154196, 21.248055, 18.652376, 21.279518, 21.589119, 21.223455, 19.639475, 21.423983, 22.051989, 25.295067, 25.472538, 30.299950, 31.372770, 32.081581, 29.557137, 25.280773, 24.964289, 22.820082, 19.773882, 21.649080, 22.629297, 23.314922, 21.471209, 22.833958, 23.748293, 23.172810, 21.104683, 
@@ -43,32 +42,45 @@ float mlx90640To[768] = {
 32.088753, 30.563900, 28.151869, 27.495949, 31.573385, 30.869184, 26.378063, 22.739149, 25.992474, 25.923962, 25.064892, 25.197500, 29.335503, 29.400650, 27.571798, 26.694941, 30.337997, 29.997389, 28.669714, 27.251089, 31.289461, 32.086872, 30.189955, 28.874784, 28.749487, 28.855423, 25.507624, 24.638683, 28.104958, 28.932964, 24.717104, 23.813780};
 #endif
 
-uint8_t I2C_scan();
+uint8_t IRsensor_u8I2C_Scan();
 
 uint8_t IRsensor_Init(void)
 {
 	int result = -55;
-	uint8_t address;
+	uint8_t u8Address;
 	int status;
+	int error;
+	uint16_t u16CtrlReg;
 
 	MLX90640_I2CInit();
-  // Scan I2C to make sure IR sensor is present
-  address = I2C_scan();
+	// Scan I2C to make sure IR sensor is present
+	//u8Address = IRsensor_u8I2C_Scan();
 
-  // Initialize IR sensor
-  result = MLX90640_SetResolution(MLX90640_ADR, 0x02);
-//  Serial.println("Get MLX90640 resolution:");
-  result = MLX90640_GetCurResolution(MLX90640_ADR);
-//  Serial.println(result);
-  MLX90640_SetRefreshRate(MLX90640_ADR, RR4Hz);
-  MLX90640_SetInterleavedMode(MLX90640_ADR);
-  status = MLX90640_DumpEE (MLX90640_ADR, eeMLX90640);
-  status = MLX90640_ExtractParameters(eeMLX90640, &mlx90640);
-//
-  return(result);
+	// Initialize IR sensor
+	/* Keed default resolution = 2*/
+	//result = MLX90640_SetResolution(MLX90640_ADR, 0x02);
+	ets_printf("Get current resolution\n");
+	result = MLX90640_GetCurResolution(MLX90640_ADR);
+	ets_printf("Result = %d\n",result);
+	ets_printf("Set refresh rate\n");
+	MLX90640_SetRefreshRate(MLX90640_ADR, RR16Hz);
+	ets_printf("Set interleave mode\n");
+	MLX90640_SetInterleavedMode(MLX90640_ADR);
+	status = MLX90640_DumpEE (MLX90640_ADR, IRsensor_au16EEPROM_Data);
+	status = MLX90640_ExtractParameters(IRsensor_au16EEPROM_Data, &IRsensor_sMLX_Parameters);
+
+    error = MLX90640_I2CRead(MLX90640_ADR, 0x800D, 1, &u16CtrlReg);
+    if(error == 0)
+    {
+    	MLX90640_vSwapBytes(&u16CtrlReg);
+    	ets_printf("After init. 0x%x\n",u16CtrlReg);
+    }
+
+
+	return(result);
 }
 
-uint8_t I2C_scan()
+uint8_t IRsensor_u8I2C_Scan()
 {
 	uint8_t detectedAddress = 0xFF;
 	uint8_t address;
@@ -79,7 +91,7 @@ uint8_t I2C_scan()
 	uint8_t data_h;
 	uint8_t data_l;
 
-	ets_printf("Scanning...");
+	ets_printf("Scanning...\n");
  
   nDevices = 0;
   for(address = 1; address < 127; address++ )
@@ -96,7 +108,7 @@ uint8_t I2C_scan()
 
     if (i2c_ret == ESP_OK)
     {
-    	ets_printf("Found...");
+    	ets_printf("Found on address 0x%x...\n",address);
 //      Serial.print("I2C device found at address 0x");
 //      if (address<16)
 //        Serial.print("0");
@@ -121,34 +133,42 @@ uint8_t I2C_scan()
     return(detectedAddress);
 }
 
-uint8_t IRsensor_DataIsReady(void)
+uint8_t IRsensor_u8DataIsReady(void)
 {
-  uint8_t dataReady = 0;
-  uint8_t error;
-  uint16_t registerValue;
+  uint8_t u8DataReady = 0;
+  int32_t s32Error;
+  uint16_t u16RegisterValue;
 
-  error = MLX90640_I2CRead(MLX90640_ADR, 0x8000, 1, &registerValue);
-  dataReady = registerValue & 0x0008;
-  return(dataReady);
+  /* Read status register */
+  s32Error = MLX90640_I2CRead(MLX90640_ADR, MLX90640_STATUS_REG_ADDR, 1, &u16RegisterValue);
+  if(s32Error == 0u)
+  {
+	  /* Set data ready flag */
+	  u8DataReady = u16RegisterValue & 0x0008u;
+	  /* Save subpage information */
+	  IRsensor_u8subPage = u16RegisterValue & 0x0001u;
+  }
+  return(u8DataReady);
 }
 
 void IRsensor_LoadSubPage(float* mlx90640To)
 {
 	int status;
 
-	status = MLX90640_GetFrameData_Custom(MLX90640_ADR, mlx90640Frame, subPage);
+	status = MLX90640_GetFrameData_Custom(MLX90640_ADR, IRsensor_au16MLX_Frame, IRsensor_u8subPage);
    MLX90640_I2CWrite(MLX90640_ADR, 0x8000, 0x0010);
   #ifdef LIVE_DATA
   // -------------- Calculate temperature of subframe --------
-  tr = MLX90640_GetTa(mlx90640Frame, &mlx90640) - TA_SHIFT; //reflected temperature based on the sensor
+  IRsensor_fReflectedTemp = MLX90640_GetTa(IRsensor_au16MLX_Frame, &IRsensor_sMLX_Parameters) - TA_SHIFT; //reflected temperature based on the sensor
 
   /*
   dtostrf((double)tr, 4, 2, str_temp);
   Serial.printf("Ambient temperature: %s�C (%d)\n", str_temp, (int)tr);
-  wdt_reset();
-  */
+   */
 
-  MLX90640_CalculateTo_Custom(mlx90640Frame, &mlx90640, emissivity, tr, mlx90640To);
+
+
+  MLX90640_CalculateTo_Custom(IRsensor_au16MLX_Frame, &IRsensor_sMLX_Parameters, IRsensor_fEmissivity, IRsensor_fReflectedTemp, mlx90640To);
   //MLX90640_GetImage(mlx90640Frame, &mlx90640, mlx90640To);
   #endif
 
@@ -157,37 +177,47 @@ void IRsensor_LoadSubPage(float* mlx90640To)
   #endif 
 }
 
-void IRsensor_LoadSubPage_u16(uint16_t* pixelValue)
+void IRsensor_vLoadSubPage_u16(void)
 {
-	int status;
+    int error;
+    uint16_t u16Value;
+    uint16_t u16StatusRegister;
 
-	status = MLX90640_GetFrameData_Custom(MLX90640_ADR, mlx90640Frame, subPage);
-   MLX90640_I2CWrite(MLX90640_ADR, 0x8000, 0x0010);
-  #ifdef LIVE_DATA
-  // -------------- Calculate temperature of subframe --------
-  tr = MLX90640_GetTa(mlx90640Frame, &mlx90640) - TA_SHIFT; //reflected temperature based on the sensor
+    /* Read data from measured subpage */
+	(void)MLX90640_GetFrameData_Custom(MLX90640_ADR, IRsensor_au16MLX_Frame, IRsensor_u8subPage);
 
-  /*
-  dtostrf((double)tr, 4, 2, str_temp);
-  Serial.printf("Ambient temperature: %s�C (%d)\n", str_temp, (int)tr);
-  wdt_reset();
-  */
+	/* Clear data ready flag (bit 4) in status register  */
+	error = MLX90640_I2CRead(MLX90640_ADR, MLX90640_STATUS_REG_ADDR, 1, &u16StatusRegister);
+	if(error == 0)
+	{
+		u16Value = (u16StatusRegister & 0xFFF7);
+		error = MLX90640_I2CWrite(MLX90640_ADR, 0x8000, u16Value);
+	}
 
+#ifdef LIVE_DATA
 
-  MLX90640_CalculateTo_Custom_u16(mlx90640Frame, &mlx90640, emissivity, tr, pixelValue);
-  //MLX90640_GetImage(mlx90640Frame, &mlx90640, mlx90640To);
-  #else
-  for(uint16_t i = 0; i < 768; i++)
-  {
-    pixelValue[i] = (uint16_t)((mlx90640To[i] + (float)TEMP_OFFSET_D) * (float)TEMP_SCALE_FACTOR_D);
-    //Serial.printf("%d %d|", pixelValue[i], i);
-    //if((i%32)==31) Serial.printf("\n");
-  }
-  #endif
+#else
+	for(uint16_t i = 0; i < 768; i++)
+	{
+	pu16PixelValue[i] = (uint16_t)((mlx90640To[i] + (float)TEMP_OFFSET_D) * (float)TEMP_SCALE_FACTOR_D);
+	//Serial.printf("%d %d|", pu16PixelValue[i], i);
+	//if((i%32)==31) Serial.printf("\n");
+	}
+#endif
 
-   #ifdef TEMPERATURE2CONSOLE
-  printTemperaturesToConsole(mlx90640To, 768, 32);
-  #endif 
+#ifdef TEMPERATURE2CONSOLE
+	printTemperaturesToConsole(mlx90640To, 768, 32);
+#endif
+}
+
+void IRsensor_vCalculatePixelTemp_u16(uint16_t* pu16PixelValue)
+{
+	/* Calculate reflected (ambient) temperature */
+	IRsensor_fReflectedTemp = MLX90640_GetTa(IRsensor_au16MLX_Frame, &IRsensor_sMLX_Parameters) - TA_SHIFT;
+	//ets_printf("RT = %d \n",(int32_t)IRsensor_fReflectedTemp);
+
+	MLX90640_CalculateTo_Custom_u16(IRsensor_au16MLX_Frame, &IRsensor_sMLX_Parameters, IRsensor_fEmissivity, IRsensor_fReflectedTemp, pu16PixelValue);
+	//ets_printf("T = %d \n",(int32_t)((pu16PixelValue[50]/TEMP_SCALE_FACTOR_D)-TEMP_OFFSET_D));
 }
 
 void IRsensor_UpdateMinMax(float* min_t, float* max_t, float* pixelValue)
@@ -205,6 +235,7 @@ void IRsensor_UpdateMinMax_u16(uint16_t* pu16MinTemp, uint16_t* pu16MaxTemp, uin
 {
     *pu16MinTemp = (uint16_t)((300 + TEMP_OFFSET_D) * TEMP_SCALE_FACTOR_D);
     *pu16MaxTemp = (uint16_t)((-40 + TEMP_OFFSET_D) * TEMP_SCALE_FACTOR_D);
+    uint8_t u8_MinDif = 10;	// Minimum difference between min and max
 
     for(uint16_t i = 0; i < 768u; i++)
     {
@@ -217,13 +248,13 @@ void IRsensor_UpdateMinMax_u16(uint16_t* pu16MinTemp, uint16_t* pu16MaxTemp, uin
           *pu16MinTemp = pu16PixelValue[i];    
         }
     }
+    if((*pu16MaxTemp - *pu16MinTemp) < u8_MinDif)
+    {
+    	*pu16MaxTemp = *pu16MinTemp + u8_MinDif+10;
+    }
 }
 
-uint8_t IRsensor_CurrentSubPage(void)
+uint8_t IRsensor_u8CurrentSubPage(void)
 {
-	uint16_t registerValue;
-
-	MLX90640_I2CRead(MLX90640_ADR, 0x8000, 1, &registerValue);
-	subPage = registerValue & 0x0001;
-	return(subPage);
+	return(IRsensor_u8subPage);
 }

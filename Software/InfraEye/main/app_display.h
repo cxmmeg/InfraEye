@@ -51,12 +51,14 @@
 #define DISP_ROWS_D					(120)
 #define DISP_COLUMNS_D				(120)
 
-#define COLOUR_WHITE_D				(0xFFFF)
-#define COLOUR_BLACK_D				(0x0000)
-#define COLOUR_RED_D				(0x03E0)
-#define COLOUR_GREEN_D				(0x001F)
-#define COLOUR_BLUE_D				(0xFC00)
-
+#define INPUT_ARRAY_LENGTH_D    (24)
+#define INPUT_ARRAY_WIDTH_D     (32)
+#define SCALING_FACTOR_D        (1)
+#define OUTPUT_ARRAY_LENGTH_D   ((INPUT_ARRAY_LENGTH_D * SCALING_FACTOR_D) - SCALING_FACTOR_D)
+#define OUTPUT_ARRAY_WIDTH_D    ((INPUT_ARRAY_WIDTH_D * SCALING_FACTOR_D) - SCALING_FACTOR_D)
+#define OUTPUT_NUM_OF_PIXELS_D  (OUTPUT_ARRAY_LENGTH_D * OUTPUT_ARRAY_WIDTH_D)
+// Output buffer size shall be multiple of OUTPUT_ARRAY_WIDTH_D
+#define OUTPUT_BUFFER_SIZE_D    (32 * OUTPUT_ARRAY_LENGTH_D)
 
 /************************************************************************************/
 /* TYPEDEFS																			*/
@@ -94,10 +96,11 @@ JpegDev;
 
 typedef enum
 {
+	// format RGB 565 (LSB/MSB switched)
 	colour_White_e 	= 0xFFFF,
-	colour_Red_e	= 0x03E0,
-	colour_Green_e	= 0x001F,
-	colour_Blue_e	= 0xFC00,
+	colour_Red_e	= 0x00F8,
+	colour_Green_e	= 0xE007,
+	colour_Blue_e	= 0x1F00,
 	colour_Black_e	= 0x0000
 }
 COLOURS_T;
@@ -123,12 +126,13 @@ void app_disp_vLCD_SPI_PreTransferCallback(spi_transaction_t *psTransaction);
 void app_disp_vRunDisplayTask(void);
 
 void app_disp_vSetRectangleColour(uint16_t u16ColPos, uint16_t u16RowPos, uint16_t u16ColLength, uint16_t u16RowLength, uint16_t u16Colour);
-
+void app_disp_vSetPixelColour(uint16_t u16ColPos, uint16_t u16RowPos, uint16_t u16Colour);
 void app_disp_vGetFreeHandle(DISP_HANDLE_T* psHandle);
 
 #if ENABLE_DISP_FRAME_RATE_MEASURE_D
 	uint16_t app_disp_u16GetFrameRate(void);
 #endif
 
+void LCD_Convert_u16(uint16_t *frameTemperature, uint16_t *frameColor, uint16_t frameSize, uint16_t minTemperature, uint16_t maxTemperature);
 
 #endif /* APP_DISPLAY_H_ */

@@ -17,7 +17,15 @@
  */
 #ifndef _MLX640_API_H_
 #define _MLX640_API_H_
-    
+
+#define MLX90640_STATUS_REG_ADDR	(0x8000u)
+#define USER_TEMP_OFFSET			(50)
+#define USER_TEMP_GAIN				(128)
+#define USER_TEMP_GAIN_BIT_SHIFT	(7)
+
+#if(USER_TEMP_GAIN != (1<<USER_TEMP_GAIN_BIT_SHIFT))
+#error "USER_TEMP_GAIN and USER_TEMP_GAIN_BIT_SHIFT does not match"
+#endif
   typedef struct
     {
         int16_t kVdd;
@@ -65,6 +73,7 @@
     int MLX90640_SetInterleavedMode(uint8_t slaveAddr);
     int MLX90640_SetChessMode(uint8_t slaveAddr);
     void MLX90640_BadPixelsCorrection(uint16_t *pixels, float *to, int mode, paramsMLX90640 *params);
+    void MLX90640_vSwapBytes(uint16_t* pu16Word);
     
 #endif
 
