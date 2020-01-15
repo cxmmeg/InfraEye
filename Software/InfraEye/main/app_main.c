@@ -21,6 +21,7 @@
 #include "sdkconfig.h"
 
 #include "app_display.h"
+#include "module_TouchScreen.h"
 
 /************************************************************************************/
 /* DEFINES																			*/
@@ -89,6 +90,7 @@ void app_main()
 	TaskHandle_t xHandleTask2 = NULL;
 	uint8_t address = 0;
 
+	Touch_Init();
     app_disp_vInitialize();
     address = IRsensor_Init();
     if(address==0xFF)
