@@ -1,0 +1,71 @@
+EESchema Schematic File Version 4
+LIBS:InfraEye-cache
+EELAYER 29 0
+EELAYER END
+$Descr A4 11693 8268
+encoding utf-8
+Sheet 1 1
+Title ""
+Date ""
+Rev ""
+Comp ""
+Comment1 ""
+Comment2 ""
+Comment3 ""
+Comment4 ""
+$EndDescr
+$Comp
+L InfraEye:MLX90640 U?
+U 1 1 5E2A1863
+P 2800 3150
+F 0 "U?" H 2950 3325 50  0000 C CNN
+F 1 "MLX90640" H 2950 3234 50  0000 C CNN
+F 2 "" H 2850 3300 50  0001 C CNN
+F 3 "" H 2850 3300 50  0001 C CNN
+	1    2800 3150
+	1    0    0    -1  
+$EndComp
+$Comp
+L InfraEye:ESP32-WROOM-32 U?
+U 1 1 5E2A6228
+P 5100 3450
+F 0 "U?" H 5100 4917 50  0000 C CNN
+F 1 "ESP32-WROOM-32" H 5100 4826 50  0000 C CNN
+F 2 "RF_Module:ESP32-WROOM-32" H 5100 1950 50  0001 C CNN
+F 3 "" H 4800 3500 50  0001 C CNN
+	1    5100 3450
+	1    0    0    -1  
+$EndComp
+$Comp
+L InfraEye:TFT_SPI_24_LCD U?
+U 1 1 5E2A99BF
+P 4850 5600
+F 0 "U?" H 5175 5765 50  0000 C CNN
+F 1 "TFT_SPI_24_LCD" H 5175 5674 50  0000 C CNN
+F 2 "" H 7100 5550 50  0001 C CNN
+F 3 "" H 7100 5550 50  0001 C CNN
+	1    4850 5600
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:GND #PWR?
+U 1 1 5E2ACB51
+P 2500 4100
+F 0 "#PWR?" H 2500 3850 50  0001 C CNN
+F 1 "GND" H 2505 3927 50  0000 C CNN
+F 2 "" H 2500 4100 50  0001 C CNN
+F 3 "" H 2500 4100 50  0001 C CNN
+	1    2500 4100
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	3200 3400 3800 3400
+Wire Wire Line
+	3800 3400 3800 2500
+Wire Wire Line
+	3800 2500 4500 2500
+Wire Wire Line
+	2500 4100 2500 3400
+Wire Wire Line
+	2500 3400 2700 3400
+$EndSCHEMATC
