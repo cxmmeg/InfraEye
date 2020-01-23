@@ -1,3 +1,3 @@
 
-void Touch_Init(void);
-uint8_t Touch_GetSome(void);
+uint32_t Touch_Init(void);
+uint32_t Touch_GetSome(void);

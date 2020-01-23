@@ -4,9 +4,10 @@
 //#define COLOR2CONSOLE   // Debug print of 768 uint16_t colors to console
 #define LIVE_DATA   // defined - sensor data, not defined - static picture
 
-// IR sensor
-#define MLX90640_ADR 0x33
-#define TA_SHIFT 8 //the default shift for a MLX90640 device in open air
+// IR sensor Address
+#define MLX90640_ADR 			0x33
+//the default shift for a MLX90640 device in open air
+#define TA_SHIFT 				8.0
 enum RefreshRate
 {
 	RR0_5Hz,
