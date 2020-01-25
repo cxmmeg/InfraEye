@@ -1,5 +1,4 @@
 (sym_lib_table
   (lib (name OLIMEX_IC)(type Legacy)(uri ${KIPRJMOD}/OLIMEX_IC.lib)(options "")(descr ""))
-  (lib (name Custom)(type Legacy)(uri ${KIPRJMOD}/Custom.lib)(options "")(descr ""))
   (lib (name InfraEye)(type Legacy)(uri ${KIPRJMOD}/InfraEye.lib)(options "")(descr ""))
 )
