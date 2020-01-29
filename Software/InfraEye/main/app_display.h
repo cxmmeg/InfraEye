@@ -32,17 +32,6 @@
  before the transaction is sent, the callback will set this line to the correct state.
 */
 
-#define PIN_NUM_MISO 25
-#define PIN_NUM_MOSI 23
-#define PIN_NUM_CLK  19
-#define PIN_NUM_CS   22
-
-#define PIN_NUM_DC   21
-#define PIN_NUM_RST  18
-#define PIN_NUM_BCKL 5
-
-#define PIN_NUM_TOUCH_CS	5
-
 /* Configure display frame rate measurement */
 #define ENABLE_DISP_FRAME_RATE_MEASURE_D	(1)
 
