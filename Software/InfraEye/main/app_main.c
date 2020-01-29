@@ -58,6 +58,7 @@ void vTask1( void *pvParameters )
 	TickType_t xLastWakeTime;
 
 	xLastWakeTime = xTaskGetTickCount();
+	ets_printf("TASK1/IR sensor task: Initial start\n");
 	for(;;)
 	{
 		/* Task resumed from timer callback */
@@ -108,11 +109,11 @@ void vTask2( void *pvParameters )
 	uint8_t count = 0;
 
 	xLastWakeTime = xTaskGetTickCount();
-//	ets_printf("0\n");
+	ets_printf("TASK2/LCD task: Initial start\n");
 	for(;;)
 	{
 		vTaskDelayUntil( &xLastWakeTime, 128);
-	    gpio_set_level(26, 1);
+//	    gpio_set_level(26, 1);
 //	    ets_printf("A\n");
 		if(app_main_u8DataReady)
 		{
@@ -130,7 +131,7 @@ void vTask2( void *pvParameters )
 #endif
 			app_main_u8DataReady = 0u;
 		}
-		gpio_set_level(26, 0);
+//		gpio_set_level(26, 0);
 #if 0
 		if(count == 10)
 		{
@@ -166,7 +167,7 @@ void vTimerCallback( TimerHandle_t xTimer )
 void app_main()
 {
 	uint32_t u32Return = 0;
-
+#if 0
 	/* Configure PIN 27 as output for IR sensor power supply */
 	gpio_pad_select_gpio(27);
 	gpio_set_direction(27, GPIO_MODE_OUTPUT);
@@ -181,7 +182,7 @@ void app_main()
     vTaskDelay(200);
     gpio_set_level(27, 1);
     vTaskDelay(200);
-
+#endif
     /* Initialize display */
     app_disp_vInitialize();
 //    ets_printf("Init touch sensor\n");
