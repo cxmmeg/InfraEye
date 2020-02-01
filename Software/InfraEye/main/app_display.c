@@ -119,11 +119,12 @@ static spi_bus_config_t app_disp_sBusCfg =
 static spi_device_interface_config_t app_disp_sDevCfg =
 {
 
-	.clock_speed_hz = 26*1000*1000,           //Clock out at 26 MHz
+	.clock_speed_hz = 60*1000*1000,           //Clock out at 26 MHz max for reliable reading. Flag SPI_DEVICE_NO_DUMMY set to ignore error stating that we have more than 80MHz, because we don't care about reading
 	.mode = 0,                                //SPI mode 0
 	.spics_io_num = LCD_PIN_NUM_CS,               //CS pin
 	.queue_size = 7,                          //We want to be able to queue 7 transactions at a time
 	.pre_cb = app_disp_vLCD_SPI_PreTransferCallback,  //Specify pre-transfer callback to handle D/C line
+	.flags=SPI_DEVICE_NO_DUMMY				// Ignore errors
 };
 
 static spi_bus_config_t app_touch_sBusCfg =
@@ -138,12 +139,10 @@ static spi_bus_config_t app_touch_sBusCfg =
 
 static spi_device_interface_config_t app_touch_sDevCfg =
 {
-
-	.clock_speed_hz = 1*1000*1000,           //Clock out at 1 MHz
-	.mode = 1,                                //SPI mode 0
+	.clock_speed_hz = 125*1000,           //Clock out at 1 MHz
+	.mode = 0,                                //SPI mode 0
 	.spics_io_num = TOUCH_PIN_NUM_CS,               //CS pin
-	.queue_size = 7,                          //We want to be able to queue 7 transactions at a time
-	//.pre_cb = app_disp_vLCD_SPI_PreTransferCallback,  //Specify pre-transfer callback to handle D/C line
+	.queue_size = 7                          //We want to be able to queue 7 transactions at a time	
 };
 
 static uint16_t* app_disp_pu16DispPixels;
@@ -184,41 +183,23 @@ void app_disp_vInitialize(void)
 
 	ets_printf("------------------------ Start -------------------------------\n");
 	/* Initialize the SPI bus */
-	i32Return = spi_bus_initialize(HSPI_HOST, &app_disp_sBusCfg, 1);
+	i32Return = spi_bus_initialize(VSPI_HOST, &app_disp_sBusCfg, 1);
 	ESP_ERROR_CHECK(i32Return);
 	ets_printf("LCD Bus initialized -----------------\n");
 
 	/* Attach the LCD to the SPI bus */
-	i32Return = spi_bus_add_device(HSPI_HOST, &app_disp_sDevCfg, &app_disp_psSPI_Device);
+	i32Return = spi_bus_add_device(VSPI_HOST, &app_disp_sDevCfg, &app_disp_psSPI_Device);
 	ESP_ERROR_CHECK(i32Return);
 	ets_printf("------------------------ LCD device added to bus -------------\n");
 #if 1
-	i32Return = spi_bus_initialize(VSPI_HOST, &app_touch_sBusCfg, 2);
+	i32Return = spi_bus_initialize(HSPI_HOST, &app_touch_sBusCfg, 2);
 	ESP_ERROR_CHECK(i32Return);
 	ets_printf("Touch Bus initialized ---------------\n");
 	
 	/* Attach the touch sensor to the SPI bus */
-	i32Return = spi_bus_add_device(VSPI_HOST, &app_touch_sDevCfg, &app_touch_psSPI_Device);
+	i32Return = spi_bus_add_device(HSPI_HOST, &app_touch_sDevCfg, &app_touch_psSPI_Device);
 	ESP_ERROR_CHECK(i32Return);
 	ets_printf("------------------------ Touch device added to bus -----------\n");
-#if 0
-	for(;;)
-	{
-		for(u32_count = 0; u32_count<6553; u32_count++)
-		{
-			u32_r = app_touch_DoMagic(0xD0);
-		}
-		for(cmd = 0x8; cmd<0x10; cmd++)
-		{
-			u32_r = app_touch_DoMagic((cmd<<4));
-			ets_printf("Touch 0x%02x:0x%04x\n", (cmd<<4), u32_r);
-			if(cmd == 0x8) ets_printf("\tPressure:%d\n", u32_r);
-			if(cmd == 0xd) ets_printf("\tX:%d\n", (u32_r>>8)&0xFFFF);
-			if(cmd == 0xc) ets_printf("\tY:%d\n", u32_r);
-		}
-		ets_printf("\n");
-	}
-#endif
 	ets_printf("------------------------ End ---------------------------------\n");
 #endif
 	/* Initialize the LCD */
@@ -233,19 +214,19 @@ void app_disp_vInitialize(void)
 uint32_t app_touch_DoMagic(uint8_t u8_cmd)
 {
 	esp_err_t i32Return = 0;
-	spi_transaction_t sTransaction;
-	uint8_t au8_rxdata[10];
-	uint8_t au8_txdata[10];
+	
+	uint8_t au8_rxdata[4];
+	uint8_t au8_txdata[4] = {0xA5, 0xB6, 0xC7, 0xD8};
 
 	//app_disp_vLCD_Cmd(app_touch_psSPI_Device, u8_cmd);
 
+	spi_transaction_t sTransaction;
 	memset(&sTransaction, 0, sizeof(sTransaction)); 		//Zero out the transaction
 	sTransaction.length = 8*4;
 	sTransaction.tx_buffer = au8_txdata;
 	sTransaction.tx_data[0] = u8_cmd;
-	sTransaction.rxlength = 8*4;
-	sTransaction.flags = SPI_TRANS_USE_RXDATA;
 	sTransaction.rx_buffer = au8_rxdata;
+ 	sTransaction.flags = SPI_TRANS_USE_RXDATA|SPI_TRANS_USE_TXDATA;
 	i32Return = spi_device_polling_transmit(app_touch_psSPI_Device, &sTransaction);  //Transmit!
 	assert(i32Return == ESP_OK);            				//Should have had no issues.
 
@@ -558,9 +539,9 @@ void LCD_Convert_u16(uint16_t *frameTemperature, uint16_t *frameColor, uint16_t 
 		{
 			u32_r = app_touch_DoMagic((cmd<<4));
 			ets_printf("Touch 0x%02x:0x%04x\n", (cmd<<4), u32_r);
-			if(cmd == 0x8) ets_printf("\tPressure:%d\n", u32_r);
-			if(cmd == 0xd) ets_printf("\tX:%d\n", (u32_r>>8)&0xFFFF);
-			if(cmd == 0xc) ets_printf("\tY:%d\n", u32_r);
+			if(cmd == 0x8) ets_printf("\tPressure:%d\n", (u32_r>>9)&0x0FFF);
+			if(cmd == 0x9) ets_printf("\tX:%d\n", (u32_r>>9)&0x0FFF);
+			if(cmd == 0xd) ets_printf("\tY:%d\n", (u32_r>>9)&0x0FFF);
 		}
 		ets_printf("\n");
 }

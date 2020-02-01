@@ -19,11 +19,6 @@
 /* DEFINES																			*/
 /************************************************************************************/
 
-/* Can run 'make menuconfig' to choose the GPIO to blink,
-   or you can edit the following line and set a number here.
-*/
-#define BLINK_GPIO 2
-
 #define TASK_IR_SENSOR_CYCLE_RATE_MS ((TickType_t)8)
 #define TASK_PERFORM_IR_DATA_CYCLE_RATE_MS ((TickType_t)100)
 

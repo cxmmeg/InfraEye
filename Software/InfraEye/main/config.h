@@ -23,11 +23,18 @@ enum RefreshRate
 #define REFRESH_RATE	RR2Hz
 
 // LCD
-#define LCD_PIN_NUM_MISO 25
+
+#define LCD_PIN_NUM_MISO 5
 #define LCD_PIN_NUM_MOSI 23
 #define LCD_PIN_NUM_CLK  19
 #define LCD_PIN_NUM_CS   22
 
+/*
+#define LCD_PIN_NUM_MISO 35
+#define LCD_PIN_NUM_MOSI 32
+#define LCD_PIN_NUM_CLK  25
+#define LCD_PIN_NUM_CS   33
+*/
 #define LCD_PIN_NUM_DC   21
 #define LCD_PIN_NUM_RST  18
 //#define LCD_PIN_NUM_BCKL 5
@@ -35,10 +42,17 @@ enum RefreshRate
 #define RAW_IMAGE
 
 // Touch
-#define TOUCH_PIN_NUM_MISO	33
+#define TOUCH_PIN_NUM_MISO	35
 #define TOUCH_PIN_NUM_MOSI	32
-#define TOUCH_PIN_NUM_CLK	5
-#define TOUCH_PIN_NUM_CS	15
-
+#define TOUCH_PIN_NUM_CLK	25
+#define TOUCH_PIN_NUM_CS	33
+/*
+#define TOUCH_PIN_NUM_MISO	5
+#define TOUCH_PIN_NUM_MOSI	23
+#define TOUCH_PIN_NUM_CLK	19
+#define TOUCH_PIN_NUM_CS	22
+*/
 // SD
 
+// General
+#define PIN_NUM_BLUE_LED	2
