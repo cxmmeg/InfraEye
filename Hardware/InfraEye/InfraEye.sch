@@ -205,22 +205,8 @@ F 3 "" H 1850 1300 50  0001 C CNN
 $EndComp
 Wire Wire Line
 	2500 2200 2500 1100
-$Comp
-L InfraEye:ESP32-WROOM-32 U2
-U 1 1 5E2A6228
-P 5300 2950
-F 0 "U2" H 5350 3000 50  0000 C CNN
-F 1 "ESP32-WROOM-32" H 5800 2900 50  0000 C CNN
-F 2 "InfraEye:ESP32-WROOM-32-30pin" H 5300 1450 50  0001 C CNN
-F 3 "" H 5000 3000 50  0001 C CNN
-	1    5300 2950
-	-1   0    0    -1  
-$EndComp
 Wire Wire Line
-	1150 1100 1150 2200
-Connection ~ 1150 1100
-Wire Wire Line
-	1150 1100 1150 800 
+	1150 1100 1150 1900
 $Comp
 L power:+3V3 #PWR0102
 U 1 1 5E3EA727
@@ -244,17 +230,6 @@ F 3 "" H 5050 5700 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L power:+3V3 #PWR0104
-U 1 1 5E3CF96E
-P 6550 4650
-F 0 "#PWR0104" H 6550 4500 50  0001 C CNN
-F 1 "+3V3" H 6565 4823 50  0000 C CNN
-F 2 "" H 6550 4650 50  0001 C CNN
-F 3 "" H 6550 4650 50  0001 C CNN
-	1    6550 4650
-	1    0    0    -1  
-$EndComp
-$Comp
 L power:GND #PWR0105
 U 1 1 5E3CFD9A
 P 5950 6500
@@ -268,56 +243,25 @@ $EndComp
 Wire Wire Line
 	4200 4400 4100 4400
 Wire Wire Line
-	6550 4650 6550 4800
-Wire Wire Line
-	6550 4800 6800 4800
-Wire Wire Line
-	6550 4800 4200 4800
-Wire Wire Line
 	4200 4800 4200 4500
-Connection ~ 6550 4800
 Wire Wire Line
 	7000 4800 7000 4900
-Wire Wire Line
-	4000 4900 4000 4300
-Wire Wire Line
-	4000 4300 4200 4300
 Wire Wire Line
 	7100 4800 7100 5000
 Wire Wire Line
 	7100 5000 3900 5000
 Wire Wire Line
-	3900 5000 3900 4100
-Wire Wire Line
-	3900 4100 4200 4100
-Wire Wire Line
 	7200 4800 7200 5100
 Wire Wire Line
-	7000 4900 4000 4900
-Wire Wire Line
 	7200 5100 3800 5100
-Wire Wire Line
-	3800 5100 3800 3800
-Wire Wire Line
-	3800 3800 4200 3800
 Wire Wire Line
 	7300 4800 7300 5200
 Wire Wire Line
 	7300 5200 3700 5200
 Wire Wire Line
-	3700 5200 3700 3700
-Wire Wire Line
-	3700 3700 4200 3700
-Wire Wire Line
 	7400 4800 7400 5300
 Wire Wire Line
 	7400 5300 3600 5300
-Wire Wire Line
-	3600 5300 3600 3600
-Wire Wire Line
-	3600 3600 4200 3600
-Wire Wire Line
-	7600 4800 7600 5400
 Wire Wire Line
 	5050 6100 5050 6200
 Wire Wire Line
@@ -393,17 +337,9 @@ Wire Wire Line
 Wire Wire Line
 	7350 2750 7350 2650
 Wire Wire Line
-	7350 2650 5500 2650
-Wire Wire Line
-	5500 2650 5500 3500
-Wire Wire Line
-	5500 3500 5400 3500
-Wire Wire Line
 	7450 2650 7450 2550
 Wire Wire Line
 	7450 2550 5600 2550
-Wire Wire Line
-	5600 2550 5600 3600
 Wire Wire Line
 	5600 3600 5400 3600
 Connection ~ 7450 2650
@@ -426,30 +362,292 @@ Wire Wire Line
 	5800 3800 5400 3800
 Connection ~ 7650 2450
 Wire Wire Line
-	5900 3400 5400 3400
-Wire Wire Line
-	3400 3200 3400 5400
-Wire Wire Line
-	3400 5400 7600 5400
-Wire Wire Line
-	3400 3200 4200 3200
-Wire Wire Line
-	3500 5900 3500 3500
-Wire Wire Line
-	3500 3500 4200 3500
-Wire Wire Line
 	3500 5900 4450 5900
-Wire Wire Line
-	5900 800  5900 3400
-Wire Wire Line
-	1150 800  5900 800 
-Wire Wire Line
-	4200 3100 3400 3100
-Wire Wire Line
-	3400 3100 3400 2200
 Wire Wire Line
 	1700 2200 2500 2200
 Connection ~ 2500 2200
 Wire Wire Line
 	2500 2200 3400 2200
+Wire Wire Line
+	5600 2550 5600 3600
+Wire Wire Line
+	5400 3400 6000 3400
+Wire Wire Line
+	6000 3400 6000 2650
+Wire Wire Line
+	6000 2650 7350 2650
+Wire Wire Line
+	3400 2200 3400 3100
+Wire Wire Line
+	3500 3500 4200 3500
+Wire Wire Line
+	3500 3500 3500 5900
+Wire Wire Line
+	4200 3100 3400 3100
+Wire Wire Line
+	4200 3200 3300 3200
+Wire Wire Line
+	3300 3200 3300 1900
+Wire Wire Line
+	3300 1900 1150 1900
+Connection ~ 1150 1900
+Wire Wire Line
+	1150 1900 1150 2200
+Wire Wire Line
+	5400 3500 5900 3500
+Wire Wire Line
+	5900 3500 5900 5400
+Wire Wire Line
+	5900 5400 7600 5400
+Wire Wire Line
+	7600 5400 7600 4800
+Wire Wire Line
+	4200 3600 3600 3600
+Wire Wire Line
+	3600 3600 3600 5300
+Wire Wire Line
+	4200 3700 3700 3700
+Wire Wire Line
+	3700 3700 3700 5200
+Wire Wire Line
+	4200 3800 3800 3800
+Wire Wire Line
+	3800 3800 3800 5100
+Wire Wire Line
+	4000 4900 7000 4900
+$Comp
+L InfraEye-rescue:ESP32-WROOM-32-InfraEye U2
+U 1 1 5E2A6228
+P 5300 2950
+F 0 "U2" H 5350 3000 50  0000 C CNN
+F 1 "ESP32-WROOM-32" H 5800 2900 50  0000 C CNN
+F 2 "InfraEye:ESP32-WROOM-32-30pin" H 5300 1450 50  0001 C CNN
+F 3 "" H 5000 3000 50  0001 C CNN
+	1    5300 2950
+	-1   0    0    -1  
+$EndComp
+Wire Wire Line
+	3900 4100 4200 4100
+Wire Wire Line
+	3900 4100 3900 5000
+Wire Wire Line
+	4000 4900 4000 4300
+Wire Wire Line
+	4000 4300 4200 4300
+Text Notes 1000 6800 0    50   ~ 0
+Component placement legend:\nB - Basic components - always populated\nW - WIFI version\nL - LCD version\nA - AC power supply\nR - Relay\nO - LCD backlight always on
+$Comp
+L Regulator_Linear:LT1129-3.3_SOT223 U?
+U 1 1 5E49B10B
+P 9400 1100
+F 0 "U?" H 9400 1342 50  0000 C CNN
+F 1 "LT1129-3.3_SOT223" H 9400 1251 50  0000 C CNN
+F 2 "Package_TO_SOT_SMD:SOT-223-3_TabPin2" H 9400 1325 50  0001 C CIN
+F 3 "https://www.analog.com/media/en/technical-documentation/data-sheets/112935ff.pdf" H 9400 1050 50  0001 C CNN
+	1    9400 1100
+	1    0    0    -1  
+$EndComp
+$Comp
+L Device:CP C?
+U 1 1 5E49BC11
+P 10000 1250
+F 0 "C?" H 10118 1296 50  0000 L CNN
+F 1 "CP" H 10118 1205 50  0000 L CNN
+F 2 "" H 10038 1100 50  0001 C CNN
+F 3 "~" H 10000 1250 50  0001 C CNN
+	1    10000 1250
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:GND #PWR?
+U 1 1 5E49C3A2
+P 9400 1550
+F 0 "#PWR?" H 9400 1300 50  0001 C CNN
+F 1 "GND" H 9405 1377 50  0000 C CNN
+F 2 "" H 9400 1550 50  0001 C CNN
+F 3 "" H 9400 1550 50  0001 C CNN
+	1    9400 1550
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:+5V #PWR?
+U 1 1 5E49CDEE
+P 10000 950
+F 0 "#PWR?" H 10000 800 50  0001 C CNN
+F 1 "+5V" H 10015 1123 50  0000 C CNN
+F 2 "" H 10000 950 50  0001 C CNN
+F 3 "" H 10000 950 50  0001 C CNN
+	1    10000 950 
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	6550 4800 4200 4800
+Wire Wire Line
+	6550 4800 6800 4800
+Connection ~ 6550 4800
+Wire Wire Line
+	6550 4650 6550 4800
+$Comp
+L power:+3V3 #PWR0104
+U 1 1 5E3CF96E
+P 6550 4650
+F 0 "#PWR0104" H 6550 4500 50  0001 C CNN
+F 1 "+3V3" H 6565 4823 50  0000 C CNN
+F 2 "" H 6550 4650 50  0001 C CNN
+F 3 "" H 6550 4650 50  0001 C CNN
+	1    6550 4650
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:+5V #PWR?
+U 1 1 5E49F5F8
+P 5400 4600
+F 0 "#PWR?" H 5400 4450 50  0001 C CNN
+F 1 "+5V" H 5415 4773 50  0000 C CNN
+F 2 "" H 5400 4600 50  0001 C CNN
+F 3 "" H 5400 4600 50  0001 C CNN
+	1    5400 4600
+	-1   0    0    1   
+$EndComp
+Wire Wire Line
+	5400 4500 5400 4600
+$Comp
+L Connector:Conn_01x03_Male J?
+U 1 1 5E4A3F51
+P 7200 750
+F 0 "J?" H 7308 1031 50  0000 C CNN
+F 1 "Conn_01x03_Male" H 7308 940 50  0000 C CNN
+F 2 "" H 7200 750 50  0001 C CNN
+F 3 "~" H 7200 750 50  0001 C CNN
+	1    7200 750 
+	1    0    0    -1  
+$EndComp
+$Comp
+L Device:D D?
+U 1 1 5E4A527D
+P 8150 800
+F 0 "D?" V 8104 879 50  0000 L CNN
+F 1 "D" V 8195 879 50  0000 L CNN
+F 2 "" H 8150 800 50  0001 C CNN
+F 3 "~" H 8150 800 50  0001 C CNN
+	1    8150 800 
+	0    1    1    0   
+$EndComp
+$Comp
+L Device:D D?
+U 1 1 5E4A5A94
+P 8150 1350
+F 0 "D?" V 8104 1429 50  0000 L CNN
+F 1 "D" V 8195 1429 50  0000 L CNN
+F 2 "" H 8150 1350 50  0001 C CNN
+F 3 "~" H 8150 1350 50  0001 C CNN
+	1    8150 1350
+	0    1    1    0   
+$EndComp
+$Comp
+L Device:D D?
+U 1 1 5E4A63D7
+P 7900 800
+F 0 "D?" H 7900 1016 50  0000 C CNN
+F 1 "D" H 7900 925 50  0000 C CNN
+F 2 "" H 7900 800 50  0001 C CNN
+F 3 "~" H 7900 800 50  0001 C CNN
+	1    7900 800 
+	0    -1   -1   0   
+$EndComp
+$Comp
+L Device:D D?
+U 1 1 5E4A6C25
+P 7900 1350
+F 0 "D?" H 7900 1566 50  0000 C CNN
+F 1 "D" H 7900 1475 50  0000 C CNN
+F 2 "" H 7900 1350 50  0001 C CNN
+F 3 "~" H 7900 1350 50  0001 C CNN
+	1    7900 1350
+	0    -1   -1   0   
+$EndComp
+$Comp
+L Device:D_Zener D?
+U 1 1 5E4A7633
+P 8600 1250
+F 0 "D?" V 8554 1329 50  0000 L CNN
+F 1 "D_Zener" V 8645 1329 50  0000 L CNN
+F 2 "" H 8600 1250 50  0001 C CNN
+F 3 "~" H 8600 1250 50  0001 C CNN
+	1    8600 1250
+	0    1    1    0   
+$EndComp
+$Comp
+L Device:CP C?
+U 1 1 5E4A8600
+P 8950 1250
+F 0 "C?" H 9068 1296 50  0000 L CNN
+F 1 "CP" H 9068 1205 50  0000 L CNN
+F 2 "" H 8988 1100 50  0001 C CNN
+F 3 "~" H 8950 1250 50  0001 C CNN
+	1    8950 1250
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	9100 1100 8950 1100
+Wire Wire Line
+	8600 1100 8950 1100
+Connection ~ 8950 1100
+Wire Wire Line
+	8150 950  8150 1150
+Wire Wire Line
+	8600 1100 7900 1100
+Wire Wire Line
+	7900 1100 7900 1200
+Connection ~ 8600 1100
+Wire Wire Line
+	7900 1100 7900 950 
+Connection ~ 7900 1100
+Wire Wire Line
+	9400 1400 9400 1450
+Wire Wire Line
+	9400 1450 8950 1450
+Wire Wire Line
+	8950 1450 8950 1400
+Connection ~ 9400 1450
+Wire Wire Line
+	9400 1450 9400 1550
+Wire Wire Line
+	8950 1450 8600 1450
+Wire Wire Line
+	8600 1450 8600 1400
+Connection ~ 8950 1450
+Wire Wire Line
+	8150 1150 8400 1150
+Wire Wire Line
+	8400 1150 8400 1450
+Wire Wire Line
+	8400 1450 8600 1450
+Connection ~ 8150 1150
+Wire Wire Line
+	8150 1150 8150 1200
+Connection ~ 8600 1450
+Wire Wire Line
+	7900 1500 8150 1500
+Wire Wire Line
+	7900 650  8150 650 
+Wire Wire Line
+	7400 650  7900 650 
+Connection ~ 7900 650 
+Wire Wire Line
+	7400 750  7600 750 
+Wire Wire Line
+	7600 750  7600 1500
+Wire Wire Line
+	7600 1500 7900 1500
+Connection ~ 7900 1500
+Wire Wire Line
+	9700 1100 10000 1100
+Wire Wire Line
+	10000 950  10000 1100
+Connection ~ 10000 1100
+Wire Wire Line
+	9400 1450 10000 1450
+Wire Wire Line
+	10000 1450 10000 1400
 $EndSCHEMATC
